@@ -1,35 +1,25 @@
 import { Link } from "wouter";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Heart, Trophy, Tag, Lock } from "lucide-react";
+import { Heart, Tag } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import type { Artwork } from "@shared/schema";
 
 interface ArtworkCardProps {
   artwork: Artwork;
   showActions?: boolean;
-  isStaked?: boolean;
-  stakingYield?: string;
 }
 
 export default function ArtworkCard({ 
   artwork, 
   showActions = true,
-  isStaked = false,
-  stakingYield = "0"
 }: ArtworkCardProps) {
   return (
     <Card className="group relative overflow-hidden transition-all hover:shadow-lg">
       <div className="absolute right-2 top-2 z-10 flex gap-2">
         {artwork.hasPhysicalAsset && (
-          <Badge variant="secondary" className="bg-white/90">
+          <Badge variant="secondary" className="bg-white/90 backdrop-blur-sm">
             Physical Asset
-          </Badge>
-        )}
-        {isStaked && (
-          <Badge variant="secondary" className="bg-primary/90 text-white">
-            <Lock className="mr-1 h-3 w-3" />
-            Staked
           </Badge>
         )}
       </div>
@@ -63,45 +53,35 @@ export default function ArtworkCard({
               {artwork.description}
             </p>
           )}
-
-          {isStaked && (
-            <div className="mt-3 p-2 bg-primary/5 rounded-md">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Staking Yield</span>
-                <span className="font-medium text-primary">{stakingYield} GOV</span>
-              </div>
-            </div>
-          )}
         </div>
       </CardContent>
 
       {showActions && (
         <CardFooter className="gap-2 p-4 pt-0">
-          {!isStaked ? (
-            <>
-              <Button variant="outline" size="sm" className="flex-1">
-                <Heart className="h-4 w-4 mr-1" />
-                Vote
-              </Button>
-              <Button variant="outline" size="sm" className="flex-1">
-                <Trophy className="h-4 w-4 mr-1" />
-                Stake
-              </Button>
-              {artwork.price && (
-                <Button variant="outline" size="sm" className="flex-1">
-                  <Tag className="h-4 w-4 mr-1" />
-                  Buy
-                </Button>
-              )}
-            </>
-          ) : (
-            <Button variant="outline" size="sm" className="flex-1">
-              <Lock className="h-4 w-4 mr-1" />
-              Unstake
+          <Button 
+            variant="default"
+            size="sm" 
+            className="flex-1 bg-gradient-to-r from-primary to-primary-600 hover:opacity-90 transition-opacity"
+          >
+            <Heart className="h-4 w-4 mr-1" />
+            Vote
+          </Button>
+          {artwork.price && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="flex-1 border-primary/20 hover:border-primary transition-colors"
+            >
+              <Tag className="h-4 w-4 mr-1" />
+              Buy
             </Button>
           )}
           <Link href={`/artwork/${artwork.id}`}>
-            <Button size="sm" className="flex-1">
+            <Button 
+              size="sm" 
+              variant="secondary"
+              className="flex-1 hover:bg-secondary/80 transition-colors"
+            >
               View
             </Button>
           </Link>
