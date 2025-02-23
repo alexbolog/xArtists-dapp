@@ -8,7 +8,9 @@ import {
   Clock, 
   CheckCircle2, 
   XCircle,
-  PlusCircle 
+  PlusCircle,
+  ChevronRight,
+  Vote as VoteIcon
 } from "lucide-react";
 import type { Proposal } from "@shared/schema";
 
@@ -46,12 +48,21 @@ function ProposalCard({ proposal }: { proposal: Proposal }) {
 
   const statusConfig = getStatusConfig();
 
+  // Demo user data - in a real app, this would come from auth context
+  const userVotingPower = 100;
+  const userPastVote = proposal.status !== 'active' ? 'for' : null;
+
   return (
-    <Card className={`${proposal.status === 'active' ? 'border-primary/50' : ''}`}>
-      <div className={`${statusConfig.color} p-3 flex items-center gap-2 rounded-t-lg border-b`}>
-        {statusConfig.icon}
-        <span className={`font-medium ${statusConfig.textColor}`}>
-          {statusConfig.text}
+    <Card 
+      className={`
+        ${proposal.status === 'active' ? 'border-primary/50' : ''} 
+        ${proposal.status !== 'active' ? 'opacity-75' : ''}
+      `}
+    >
+      <div className={`${statusConfig?.color} p-3 flex items-center gap-2 rounded-t-lg border-b`}>
+        {statusConfig?.icon}
+        <span className={`font-medium ${statusConfig?.textColor}`}>
+          {statusConfig?.text}
         </span>
       </div>
 
@@ -84,15 +95,39 @@ function ProposalCard({ proposal }: { proposal: Proposal }) {
           </div>
         </div>
 
-        {proposal.status === 'active' && (
-          <div className="flex gap-2 mt-4">
-            <Button variant="default" className="flex-1 gap-1">
-              <ThumbsUp className="h-4 w-4" />
-              Vote For
-            </Button>
-            <Button variant="outline" className="flex-1 gap-1">
-              <ThumbsDown className="h-4 w-4" />
-              Vote Against
+        {proposal.status === 'active' ? (
+          <div className="mt-4 space-y-4">
+            <div className="p-3 bg-primary/5 rounded-lg">
+              <div className="flex items-center gap-2 text-sm mb-2">
+                <VoteIcon className="h-4 w-4 text-primary" />
+                <span>Your Voting Power</span>
+              </div>
+              <p className="font-semibold">{userVotingPower} tokens</p>
+            </div>
+            <div className="flex gap-2">
+              <Button variant="default" className="flex-1 gap-1">
+                <ThumbsUp className="h-4 w-4" />
+                Vote For
+              </Button>
+              <Button variant="outline" className="flex-1 gap-1">
+                <ThumbsDown className="h-4 w-4" />
+                Vote Against
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="mt-4 space-y-4">
+            {userPastVote && (
+              <div className="p-3 bg-muted/50 rounded-lg">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <VoteIcon className="h-4 w-4" />
+                  <span>You voted {userPastVote}</span>
+                </div>
+              </div>
+            )}
+            <Button variant="outline" className="w-full gap-2">
+              Show Vote Breakdown
+              <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
         )}
