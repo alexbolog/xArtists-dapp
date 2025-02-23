@@ -9,6 +9,7 @@ import Gallery from "@/pages/gallery";
 import Artwork from "@/pages/artwork";
 import Create from "@/pages/create";
 import Profile from "@/pages/profile";
+import Governance from "@/pages/governance";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -19,6 +20,7 @@ function Router() {
         <Route path="/gallery" component={Gallery} />
         <Route path="/artwork/:id" component={Artwork} />
         <Route path="/create" component={Create} />
+        <Route path="/governance" component={Governance} />
         <Route path="/profile" component={Profile} />
         <Route component={NotFound} />
       </Switch>

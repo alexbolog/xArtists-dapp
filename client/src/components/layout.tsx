@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Palette, Image, UserCircle } from "lucide-react";
+import { Palette, Image, UserCircle, LightbulbIcon } from "lucide-react";
 
 interface NavItemProps {
   href: string;
@@ -56,6 +56,13 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               isActive={location === "/create"}
             >
               Create NFT
+            </NavItem>
+            <NavItem 
+              href="/governance" 
+              icon={<LightbulbIcon className="h-4 w-4" />}
+              isActive={location === "/governance"}
+            >
+              Governance
             </NavItem>
             <NavItem 
               href="/profile" 
