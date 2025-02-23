@@ -18,48 +18,54 @@ function ProposalCard({ proposal }: { proposal: Proposal }) {
     ? (Number(proposal.votesFor) / totalVotes) * 100 
     : 0;
 
-  const getStatusBadge = () => {
+  const getStatusConfig = () => {
     switch (proposal.status) {
       case 'active':
-        return (
-          <div className="flex items-center text-yellow-500">
-            <Clock className="h-4 w-4 mr-1" />
-            Active
-          </div>
-        );
+        return {
+          color: 'bg-yellow-500/10',
+          icon: <Clock className="h-5 w-5 text-yellow-500" />,
+          text: 'Active Proposal',
+          textColor: 'text-yellow-500'
+        };
       case 'passed':
-        return (
-          <div className="flex items-center text-green-500">
-            <CheckCircle2 className="h-4 w-4 mr-1" />
-            Passed
-          </div>
-        );
+        return {
+          color: 'bg-green-500/10',
+          icon: <CheckCircle2 className="h-5 w-5 text-green-500" />,
+          text: 'Proposal Passed',
+          textColor: 'text-green-500'
+        };
       case 'rejected':
-        return (
-          <div className="flex items-center text-red-500">
-            <XCircle className="h-4 w-4 mr-1" />
-            Rejected
-          </div>
-        );
+        return {
+          color: 'bg-red-500/10',
+          icon: <XCircle className="h-5 w-5 text-red-500" />,
+          text: 'Proposal Rejected',
+          textColor: 'text-red-500'
+        };
     }
   };
 
+  const statusConfig = getStatusConfig();
+
   return (
-    <Card>
+    <Card className={`${proposal.status === 'active' ? 'border-primary/50' : ''}`}>
+      <div className={`${statusConfig.color} p-3 flex items-center gap-2 rounded-t-lg border-b`}>
+        {statusConfig.icon}
+        <span className={`font-medium ${statusConfig.textColor}`}>
+          {statusConfig.text}
+        </span>
+      </div>
+
       <CardHeader className="pb-3">
-        <div className="flex justify-between items-start">
-          <div>
-            <CardTitle className="text-xl mb-1">{proposal.title}</CardTitle>
-            <p className="text-sm text-muted-foreground">
-              Created by {proposal.creatorId}
-            </p>
-          </div>
-          {getStatusBadge()}
+        <div>
+          <CardTitle className="text-xl mb-1">{proposal.title}</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Created by {proposal.creatorId}
+          </p>
         </div>
       </CardHeader>
       <CardContent>
         <p className="text-sm mb-4">{proposal.description}</p>
-        
+
         <div className="space-y-2">
           <div className="flex justify-between text-sm">
             <span>Participation</span>
@@ -100,6 +106,9 @@ export default function Governance() {
     queryKey: ["/api/proposals"],
   });
 
+  const activeProposals = proposals?.filter(p => p.status === 'active') || [];
+  const pastProposals = proposals?.filter(p => p.status !== 'active') || [];
+
   return (
     <div>
       <div className="flex justify-between items-center mb-8">
@@ -124,10 +133,29 @@ export default function Governance() {
           ))}
         </div>
       ) : (
-        <div className="space-y-4">
-          {proposals?.map((proposal) => (
-            <ProposalCard key={proposal.id} proposal={proposal} />
-          ))}
+        <div className="space-y-8">
+          {activeProposals.length > 0 && (
+            <div>
+              <h2 className="text-xl font-semibold mb-4">Active Proposals</h2>
+              <div className="space-y-4">
+                {activeProposals.map((proposal) => (
+                  <ProposalCard key={proposal.id} proposal={proposal} />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {pastProposals.length > 0 && (
+            <div>
+              <h2 className="text-xl font-semibold mb-4">Past Proposals</h2>
+              <div className="space-y-4">
+                {pastProposals.map((proposal) => (
+                  <ProposalCard key={proposal.id} proposal={proposal} />
+                ))}
+              </div>
+            </div>
+          )}
+
           {!proposals?.length && (
             <Card>
               <CardContent className="p-8 text-center">
