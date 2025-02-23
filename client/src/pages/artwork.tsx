@@ -46,15 +46,23 @@ export default function ArtworkPage() {
         </div>
 
         <div className="flex flex-col gap-2">
-          <Button size="lg" className="gap-2">
+          <Button size="lg" className="gap-2 bg-gradient-to-r from-primary to-primary-600 hover:opacity-90 transition-opacity">
             <Heart className="h-5 w-5" />
             Vote
           </Button>
-          <Button size="lg" variant="outline" className="gap-2">
+          <Button 
+            size="lg" 
+            variant="outline" 
+            className="gap-2 border-primary/20 hover:border-primary transition-colors"
+          >
             <Trophy className="h-5 w-5" />
             Stake
           </Button>
-          <Button size="lg" variant="outline" className="gap-2">
+          <Button 
+            size="lg" 
+            variant="outline" 
+            className="gap-2 border-primary/20 hover:border-primary transition-colors"
+          >
             <Share2 className="h-5 w-5" />
             Share
           </Button>

@@ -125,7 +125,7 @@ function ProposalCard({ proposal }: { proposal: Proposal }) {
                 </div>
               </div>
             )}
-            <Button variant="outline" className="w-full gap-2">
+            <Button variant="outline" className="w-full gap-2" onClick={() => window.location.href = `/proposal/${proposal.id}`}>
               Show Vote Breakdown
               <ChevronRight className="h-4 w-4" />
             </Button>

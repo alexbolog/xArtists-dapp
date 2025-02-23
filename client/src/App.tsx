@@ -10,6 +10,7 @@ import Artwork from "@/pages/artwork";
 import Create from "@/pages/create";
 import Profile from "@/pages/profile";
 import Governance from "@/pages/governance";
+import Proposal from "@/pages/proposal";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -21,6 +22,7 @@ function Router() {
         <Route path="/artwork/:id" component={Artwork} />
         <Route path="/create" component={Create} />
         <Route path="/governance" component={Governance} />
+        <Route path="/proposal/:id" component={Proposal} />
         <Route path="/profile" component={Profile} />
         <Route component={NotFound} />
       </Switch>
