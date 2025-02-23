@@ -71,8 +71,8 @@ export default function Profile() {
           icon={<Trophy className="h-4 w-4 text-muted-foreground" />}
         />
         <StatsCard
-          title="Total Votes"
-          value="24"
+          title="Governance Tokens"
+          value={user?.governanceTokenBalance || "0"}
           icon={<Vote className="h-4 w-4 text-muted-foreground" />}
         />
       </div>
@@ -107,13 +107,16 @@ export default function Profile() {
                 key={nft.id}
                 artwork={{
                   id: nft.id,
-                  title: nft.metadata.title as string,
-                  description: nft.metadata.description as string,
-                  imageUrl: nft.metadata.image as string,
-                  artist: nft.metadata.artist as string,
+                  title: (nft.metadata as Record<string, string>).title || "Untitled",
+                  description: (nft.metadata as Record<string, string>).description || null,
+                  imageUrl: (nft.metadata as Record<string, string>).image || "",
+                  artist: (nft.metadata as Record<string, string>).artist || "Unknown",
                   userId: nft.ownerId,
                   mintedNftId: nft.id,
-                  createdAt: new Date(),
+                  hasPhysicalAsset: false,
+                  physicalAssetDetails: null,
+                  price: null,
+                  createdAt: null
                 }}
               />
             ))}
@@ -135,13 +138,16 @@ export default function Profile() {
                 key={nft.id}
                 artwork={{
                   id: nft.id,
-                  title: nft.metadata.title as string,
-                  description: nft.metadata.description as string,
-                  imageUrl: nft.metadata.image as string,
-                  artist: nft.metadata.artist as string,
+                  title: (nft.metadata as Record<string, string>).title || "Untitled",
+                  description: (nft.metadata as Record<string, string>).description || null,
+                  imageUrl: (nft.metadata as Record<string, string>).image || "",
+                  artist: (nft.metadata as Record<string, string>).artist || "Unknown",
                   userId: nft.ownerId,
                   mintedNftId: nft.id,
-                  createdAt: new Date(),
+                  hasPhysicalAsset: false,
+                  physicalAssetDetails: null,
+                  price: null,
+                  createdAt: null
                 }}
               />
             ))}

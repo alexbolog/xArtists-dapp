@@ -9,19 +9,19 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUserTokens(id: number, amount: number): Promise<User>;
-  
+
   // Artworks
   getArtwork(id: number): Promise<Artwork | undefined>;
   listArtworks(): Promise<Artwork[]>;
   createArtwork(artwork: InsertArtwork): Promise<Artwork>;
-  
+
   // NFTs
   getNFT(id: number): Promise<NFT | undefined>;
   listNFTs(): Promise<NFT[]>;
   createNFT(nft: InsertNFT): Promise<NFT>;
   updateNFTStakeStatus(id: number, isStaked: boolean): Promise<NFT>;
   updateNFTVotes(id: number, increment: boolean): Promise<NFT>;
-  
+
   // Votes
   createVote(vote: InsertVote): Promise<Vote>;
   getVotesByNFT(nftId: number): Promise<Vote[]>;
@@ -56,7 +56,12 @@ export class MemStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = this.currentIds.users++;
-    const user: User = { ...insertUser, id, tokenBalance: 1000 };
+    const user: User = { 
+      ...insertUser, 
+      id, 
+      tokenBalance: 1000,
+      governanceTokenBalance: "0" 
+    };
     this.users.set(id, user);
     return user;
   }
@@ -64,7 +69,10 @@ export class MemStorage implements IStorage {
   async updateUserTokens(id: number, amount: number): Promise<User> {
     const user = await this.getUser(id);
     if (!user) throw new Error("User not found");
-    const updated = { ...user, tokenBalance: user.tokenBalance + amount };
+    const updated = { 
+      ...user, 
+      tokenBalance: (user.tokenBalance || 0) + amount 
+    };
     this.users.set(id, updated);
     return updated;
   }
@@ -83,7 +91,10 @@ export class MemStorage implements IStorage {
       ...insertArtwork, 
       id, 
       mintedNftId: null,
-      createdAt: new Date() 
+      hasPhysicalAsset: insertArtwork.hasPhysicalAsset || false,
+      physicalAssetDetails: insertArtwork.physicalAssetDetails || null,
+      price: insertArtwork.price || null,
+      createdAt: new Date()
     };
     this.artworks.set(id, artwork);
     return artwork;
@@ -104,7 +115,9 @@ export class MemStorage implements IStorage {
       id,
       isStaked: false,
       stakedAt: null,
-      voteCount: 0
+      voteCount: 0,
+      stakingYield: "0",
+      lastYieldClaim: null
     };
     this.nfts.set(id, nft);
     return nft;
@@ -127,7 +140,7 @@ export class MemStorage implements IStorage {
     if (!nft) throw new Error("NFT not found");
     const updated = { 
       ...nft, 
-      voteCount: nft.voteCount + (increment ? 1 : -1) 
+      voteCount: (nft.voteCount || 0) + (increment ? 1 : -1)
     };
     this.nfts.set(id, updated);
     return updated;
@@ -165,14 +178,19 @@ export class MemStorage implements IStorage {
         description: "A vibrant exploration of color and form",
         imageUrl: "https://images.unsplash.com/photo-1734552452939-7d9630889748",
         artist: "John Artist",
-        userId: 1
+        userId: 1,
+        hasPhysicalAsset: true,
+        physicalAssetDetails: "Original canvas painting, 24x36 inches",
+        price: "0.5"
       },
       {
         title: "Digital Dreams",
         description: "Where technology meets creativity",
         imageUrl: "https://images.unsplash.com/photo-1734623044339-e8d370c1a0e1",
         artist: "Jane Creator",
-        userId: 1
+        userId: 1,
+        hasPhysicalAsset: false,
+        price: "0.3"
       }
     ];
 
