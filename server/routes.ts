@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer } from "http";
 import { storage } from "./storage";
-import { insertArtworkSchema, insertNftSchema, insertVoteSchema } from "@shared/schema";
+import { insertArtworkSchema, insertNftSchema, insertVoteSchema, insertProposalSchema } from "@shared/schema";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express) {
@@ -78,7 +78,7 @@ export async function registerRoutes(app: Express) {
   app.post("/api/votes", async (req, res) => {
     try {
       const data = insertVoteSchema.parse(req.body);
-      
+
       // Check if user has already voted
       const hasVoted = await storage.hasUserVoted(data.userId, data.nftId);
       if (hasVoted) {
@@ -88,11 +88,39 @@ export async function registerRoutes(app: Express) {
       const vote = await storage.createVote(data);
       await storage.updateNFTVotes(data.nftId, true);
       await storage.updateUserTokens(data.userId, 10); // Reward for voting
-      
+
       res.status(201).json(vote);
     } catch (error) {
       if (error instanceof z.ZodError) {
         res.status(400).json({ message: "Invalid vote data" });
+      } else {
+        res.status(500).json({ message: "Server error" });
+      }
+    }
+  });
+
+  // List all proposals
+  app.get("/api/proposals", async (_req, res) => {
+    const proposals = await storage.listProposals();
+    res.json(proposals);
+  });
+
+  // Get single proposal
+  app.get("/api/proposals/:id", async (req, res) => {
+    const proposal = await storage.getProposal(Number(req.params.id));
+    if (!proposal) return res.status(404).json({ message: "Proposal not found" });
+    res.json(proposal);
+  });
+
+  // Create new proposal
+  app.post("/api/proposals", async (req, res) => {
+    try {
+      const data = insertProposalSchema.parse(req.body);
+      const proposal = await storage.createProposal(data);
+      res.status(201).json(proposal);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ message: "Invalid proposal data" });
       } else {
         res.status(500).json({ message: "Server error" });
       }

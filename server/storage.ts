@@ -3,6 +3,25 @@ import {
   NFT, InsertNFT, Vote, InsertVote 
 } from "@shared/schema";
 
+interface Proposal {
+  id: number;
+  title: string;
+  description: string;
+  creatorId: number;
+  status: "active" | "passed" | "rejected";
+  votesFor: string;
+  votesAgainst: string;
+  createdAt: Date;
+  endTime: Date;
+}
+
+interface InsertProposal {
+  title: string;
+  description: string;
+  creatorId: number;
+  endTime: Date;
+}
+
 export interface IStorage {
   // Users
   getUser(id: number): Promise<User | undefined>;
@@ -26,6 +45,11 @@ export interface IStorage {
   createVote(vote: InsertVote): Promise<Vote>;
   getVotesByNFT(nftId: number): Promise<Vote[]>;
   hasUserVoted(userId: number, nftId: number): Promise<boolean>;
+
+  // Proposals
+  listProposals(): Promise<Proposal[]>;
+  getProposal(id: number): Promise<Proposal | undefined>;
+  createProposal(proposal: InsertProposal): Promise<Proposal>;
 }
 
 export class MemStorage implements IStorage {
@@ -33,6 +57,7 @@ export class MemStorage implements IStorage {
   private artworks: Map<number, Artwork>;
   private nfts: Map<number, NFT>;
   private votes: Map<number, Vote>;
+  private proposals: Map<number, Proposal>;
   private currentIds: { [key: string]: number };
 
   constructor() {
@@ -40,7 +65,8 @@ export class MemStorage implements IStorage {
     this.artworks = new Map();
     this.nfts = new Map();
     this.votes = new Map();
-    this.currentIds = { users: 1, artworks: 1, nfts: 1, votes: 1 };
+    this.proposals = new Map();
+    this.currentIds = { users: 1, artworks: 1, nfts: 1, votes: 1, proposals: 1 };
 
     // Add sample data
     this.initializeSampleData();
@@ -163,15 +189,35 @@ export class MemStorage implements IStorage {
     );
   }
 
+  async listProposals(): Promise<Proposal[]> {
+    return Array.from(this.proposals.values());
+  }
+
+  async getProposal(id: number): Promise<Proposal | undefined> {
+    return this.proposals.get(id);
+  }
+
+  async createProposal(proposal: InsertProposal): Promise<Proposal> {
+    const id = this.currentIds.proposals++;
+    const newProposal: Proposal = {
+      ...proposal,
+      id,
+      status: "active",
+      votesFor: "0",
+      votesAgainst: "0",
+      createdAt: new Date()
+    };
+    this.proposals.set(id, newProposal);
+    return newProposal;
+  }
+
   private initializeSampleData() {
-    // Add sample user
     this.createUser({
       username: "demo",
       password: "demo123",
       walletAddress: "0x123...abc"
     });
 
-    // Add sample artworks
     const sampleArtworks = [
       {
         title: "Abstract Harmony",
@@ -195,6 +241,50 @@ export class MemStorage implements IStorage {
     ];
 
     sampleArtworks.forEach(artwork => this.createArtwork(artwork));
+
+    const now = new Date();
+    const futureDate = new Date();
+    futureDate.setDate(now.getDate() + 7);
+    const pastDate = new Date();
+    pastDate.setDate(now.getDate() - 7);
+
+    const sampleProposals = [
+      {
+        id: 1,
+        title: "Reduce Platform Fees",
+        description: "Proposal to reduce platform fees from 2.5% to 1.5% to encourage more artists to join the platform. This will help grow our community and increase overall transaction volume.",
+        creatorId: 1,
+        status: "active",
+        votesFor: "1500.00",
+        votesAgainst: "1000.00",
+        createdAt: now,
+        endTime: futureDate
+      },
+      {
+        id: 2,
+        title: "Increase Staking Rewards",
+        description: "Successfully implemented a 20% increase in staking rewards to incentivize long-term holding and platform participation.",
+        creatorId: 1,
+        status: "passed",
+        votesFor: "2500.00",
+        votesAgainst: "500.00",
+        createdAt: pastDate,
+        endTime: now
+      },
+      {
+        id: 3,
+        title: "Mandatory Physical Verification",
+        description: "Proposal to require in-person verification for all physical artworks was rejected due to logistical challenges and potential barriers to entry.",
+        creatorId: 1,
+        status: "rejected",
+        votesFor: "800.00",
+        votesAgainst: "2200.00",
+        createdAt: pastDate,
+        endTime: now
+      }
+    ];
+
+    sampleProposals.forEach(proposal => this.proposals.set(proposal.id, proposal));
   }
 }
 
