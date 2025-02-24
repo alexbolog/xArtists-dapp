@@ -22,6 +22,9 @@ export default defineConfig({
         ]
       : []),
   ],
+  define: {
+    global: "globalThis",
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "client", "src"),
