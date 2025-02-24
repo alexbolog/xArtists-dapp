@@ -1,0 +1,770 @@
+{
+    "buildInfo": {
+        "rustc": {
+            "version": "1.81.0-nightly",
+            "commitHash": "684b3553f70148ded97a80371c2405984d4f6aa7",
+            "commitDate": "2024-06-20",
+            "channel": "Nightly",
+            "short": "rustc 1.81.0-nightly (684b3553f 2024-06-20)"
+        },
+        "contractCrate": {
+            "name": "tro-staking",
+            "version": "0.0.0"
+        },
+        "framework": {
+            "name": "multiversx-sc",
+            "version": "0.56.1"
+        }
+    },
+    "docs": [
+        "$TRO staking smart contract",
+        "Users can stake $TRO and LP tokens in order to:",
+        "- participate in the xArtist governance mechanism",
+        "- earn rewards? TODO: check with team"
+    ],
+    "name": "TroStaking",
+    "constructor": {
+        "inputs": [
+            {
+                "name": "tro_token_identifier",
+                "type": "TokenIdentifier"
+            },
+            {
+                "name": "lp_token_identifiers",
+                "type": "variadic<TokenIdentifier>",
+                "multi_arg": true
+            }
+        ],
+        "outputs": []
+    },
+    "upgradeConstructor": {
+        "inputs": [],
+        "outputs": []
+    },
+    "endpoints": [
+        {
+            "name": "stake",
+            "mutability": "mutable",
+            "payableInTokens": [
+                "*"
+            ],
+            "inputs": [],
+            "outputs": []
+        },
+        {
+            "name": "unstake",
+            "mutability": "mutable",
+            "inputs": [
+                {
+                    "name": "request",
+                    "type": "variadic<multi<TokenIdentifier,BigUint>>",
+                    "multi_arg": true
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "name": "getTroTokenIdentifier",
+            "mutability": "readonly",
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "TokenIdentifier"
+                }
+            ]
+        },
+        {
+            "name": "getWhitelistedLpTokenIdentifiers",
+            "mutability": "readonly",
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "variadic<TokenIdentifier>",
+                    "multi_result": true
+                }
+            ]
+        },
+        {
+            "name": "getUsersStake",
+            "mutability": "readonly",
+            "inputs": [
+                {
+                    "name": "users_address",
+                    "type": "Address"
+                },
+                {
+                    "name": "token_identifier",
+                    "type": "TokenIdentifier"
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "BigUint"
+                }
+            ]
+        },
+        {
+            "name": "addWhitelistedLpTokens",
+            "onlyOwner": true,
+            "mutability": "mutable",
+            "inputs": [
+                {
+                    "name": "lp_token_identifiers",
+                    "type": "variadic<TokenIdentifier>",
+                    "multi_arg": true
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "name": "createProposal",
+            "onlyOwner": true,
+            "mutability": "mutable",
+            "inputs": [
+                {
+                    "name": "title",
+                    "type": "bytes"
+                },
+                {
+                    "name": "description",
+                    "type": "bytes"
+                },
+                {
+                    "name": "min_voting_power_to_validate_vote",
+                    "type": "BigUint"
+                },
+                {
+                    "name": "start_time",
+                    "type": "optional<u64>",
+                    "multi_arg": true
+                },
+                {
+                    "name": "end_time",
+                    "type": "optional<u64>",
+                    "multi_arg": true
+                },
+                {
+                    "name": "lp_to_tro_ratios",
+                    "type": "variadic<multi<TokenIdentifier,BigUint,BigUint>>",
+                    "multi_arg": true
+                }
+            ],
+            "outputs": [],
+            "allow_multiple_var_args": true
+        },
+        {
+            "name": "vote",
+            "mutability": "mutable",
+            "inputs": [
+                {
+                    "name": "proposal_id",
+                    "type": "u64"
+                },
+                {
+                    "name": "decision",
+                    "type": "VoteDecision"
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "name": "getLastProposalId",
+            "mutability": "readonly",
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "u64"
+                }
+            ]
+        },
+        {
+            "name": "getProposal",
+            "mutability": "readonly",
+            "inputs": [
+                {
+                    "name": "proposal_id",
+                    "type": "u64"
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "Proposal"
+                }
+            ]
+        },
+        {
+            "name": "getProposalVotes",
+            "mutability": "readonly",
+            "inputs": [
+                {
+                    "name": "proposal_id",
+                    "type": "u64"
+                },
+                {
+                    "name": "decision",
+                    "type": "VoteDecision"
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "BigUint"
+                }
+            ]
+        },
+        {
+            "name": "getUserVote",
+            "mutability": "readonly",
+            "inputs": [
+                {
+                    "name": "user",
+                    "type": "Address"
+                },
+                {
+                    "name": "proposal_id",
+                    "type": "u64"
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "VoteContext"
+                }
+            ]
+        },
+        {
+            "name": "getLpToTroRatio",
+            "mutability": "readonly",
+            "inputs": [
+                {
+                    "name": "proposal_id",
+                    "type": "u64"
+                },
+                {
+                    "name": "lp_token",
+                    "type": "TokenIdentifier"
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "BigUint"
+                }
+            ]
+        },
+        {
+            "name": "getVotingPower",
+            "mutability": "readonly",
+            "inputs": [
+                {
+                    "name": "user",
+                    "type": "Address"
+                },
+                {
+                    "name": "proposal_id",
+                    "type": "optional<u64>",
+                    "multi_arg": true
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "BigUint"
+                }
+            ]
+        },
+        {
+            "name": "getStakingContext",
+            "mutability": "readonly",
+            "inputs": [
+                {
+                    "name": "user",
+                    "type": "optional<Address>",
+                    "multi_arg": true
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "optional<StakingContext>",
+                    "multi_result": true
+                }
+            ]
+        },
+        {
+            "name": "getUserCompleteStake",
+            "mutability": "readonly",
+            "inputs": [
+                {
+                    "name": "user",
+                    "type": "Address"
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "List<EsdtTokenPayment>"
+                }
+            ]
+        },
+        {
+            "name": "getUserStake",
+            "mutability": "readonly",
+            "inputs": [
+                {
+                    "name": "user",
+                    "type": "Address"
+                },
+                {
+                    "name": "token_identifier",
+                    "type": "TokenIdentifier"
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "EsdtTokenPayment"
+                }
+            ]
+        },
+        {
+            "name": "getProposalContext",
+            "mutability": "readonly",
+            "inputs": [
+                {
+                    "name": "proposal_id",
+                    "type": "u64"
+                },
+                {
+                    "name": "user",
+                    "type": "optional<Address>",
+                    "multi_arg": true
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "ProposalContext"
+                }
+            ]
+        },
+        {
+            "name": "getActiveProposalIds",
+            "mutability": "readonly",
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "List<u64>"
+                }
+            ]
+        },
+        {
+            "name": "getProposalStatus",
+            "mutability": "readonly",
+            "inputs": [
+                {
+                    "name": "proposal_id",
+                    "type": "u64"
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "ProposalStatus"
+                }
+            ]
+        },
+        {
+            "name": "getProposalVoteContext",
+            "mutability": "readonly",
+            "inputs": [
+                {
+                    "name": "proposal_id",
+                    "type": "u64"
+                },
+                {
+                    "name": "voter",
+                    "type": "Address"
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "optional<VoteContext>",
+                    "multi_result": true
+                }
+            ]
+        },
+        {
+            "name": "getProposalVoteCount",
+            "mutability": "readonly",
+            "inputs": [
+                {
+                    "name": "proposal_id",
+                    "type": "u64"
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "ProposalVoteCount"
+                }
+            ]
+        }
+    ],
+    "events": [
+        {
+            "identifier": "stake",
+            "inputs": [
+                {
+                    "name": "caller",
+                    "type": "Address",
+                    "indexed": true
+                },
+                {
+                    "name": "epoch",
+                    "type": "u64",
+                    "indexed": true
+                },
+                {
+                    "name": "block",
+                    "type": "u64",
+                    "indexed": true
+                },
+                {
+                    "name": "timestamp",
+                    "type": "u64",
+                    "indexed": true
+                },
+                {
+                    "name": "stake_event",
+                    "type": "StakeEvent"
+                }
+            ]
+        },
+        {
+            "identifier": "unstake",
+            "inputs": [
+                {
+                    "name": "caller",
+                    "type": "Address",
+                    "indexed": true
+                },
+                {
+                    "name": "epoch",
+                    "type": "u64",
+                    "indexed": true
+                },
+                {
+                    "name": "block",
+                    "type": "u64",
+                    "indexed": true
+                },
+                {
+                    "name": "timestamp",
+                    "type": "u64",
+                    "indexed": true
+                },
+                {
+                    "name": "unstake_event",
+                    "type": "StakeEvent"
+                }
+            ]
+        },
+        {
+            "identifier": "proposalCreated",
+            "inputs": [
+                {
+                    "name": "creator",
+                    "type": "Address",
+                    "indexed": true
+                },
+                {
+                    "name": "epoch",
+                    "type": "u64",
+                    "indexed": true
+                },
+                {
+                    "name": "block",
+                    "type": "u64",
+                    "indexed": true
+                },
+                {
+                    "name": "timestamp",
+                    "type": "u64",
+                    "indexed": true
+                },
+                {
+                    "name": "event",
+                    "type": "ProposalCreatedEvent"
+                }
+            ]
+        },
+        {
+            "identifier": "vote",
+            "inputs": [
+                {
+                    "name": "voter",
+                    "type": "Address",
+                    "indexed": true
+                },
+                {
+                    "name": "proposal_id",
+                    "type": "u64",
+                    "indexed": true
+                },
+                {
+                    "name": "epoch",
+                    "type": "u64",
+                    "indexed": true
+                },
+                {
+                    "name": "block",
+                    "type": "u64",
+                    "indexed": true
+                },
+                {
+                    "name": "timestamp",
+                    "type": "u64",
+                    "indexed": true
+                },
+                {
+                    "name": "event",
+                    "type": "VoteContext"
+                }
+            ]
+        }
+    ],
+    "esdtAttributes": [],
+    "hasCallback": false,
+    "types": {
+        "EsdtTokenPayment": {
+            "type": "struct",
+            "fields": [
+                {
+                    "name": "token_identifier",
+                    "type": "TokenIdentifier"
+                },
+                {
+                    "name": "token_nonce",
+                    "type": "u64"
+                },
+                {
+                    "name": "amount",
+                    "type": "BigUint"
+                }
+            ]
+        },
+        "Proposal": {
+            "type": "struct",
+            "fields": [
+                {
+                    "name": "id",
+                    "type": "u64"
+                },
+                {
+                    "name": "title",
+                    "type": "bytes"
+                },
+                {
+                    "name": "description",
+                    "type": "bytes"
+                },
+                {
+                    "name": "creator",
+                    "type": "Address"
+                },
+                {
+                    "name": "created_at",
+                    "type": "u64"
+                },
+                {
+                    "name": "start_time",
+                    "type": "u64"
+                },
+                {
+                    "name": "end_time",
+                    "type": "u64"
+                },
+                {
+                    "name": "min_voting_power_to_validate_vote",
+                    "type": "BigUint"
+                }
+            ]
+        },
+        "ProposalContext": {
+            "type": "struct",
+            "fields": [
+                {
+                    "name": "proposal",
+                    "type": "Proposal"
+                },
+                {
+                    "name": "users_voting_power",
+                    "type": "BigUint"
+                },
+                {
+                    "name": "users_vote",
+                    "type": "Option<VoteContext>"
+                },
+                {
+                    "name": "proposal_status",
+                    "type": "ProposalStatus"
+                },
+                {
+                    "name": "proposal_vote_count",
+                    "type": "ProposalVoteCount"
+                }
+            ]
+        },
+        "ProposalCreatedEvent": {
+            "type": "struct",
+            "fields": [
+                {
+                    "name": "creator",
+                    "type": "Address"
+                },
+                {
+                    "name": "proposal_id",
+                    "type": "u64"
+                },
+                {
+                    "name": "title",
+                    "type": "bytes"
+                },
+                {
+                    "name": "min_voting_power",
+                    "type": "BigUint"
+                },
+                {
+                    "name": "start_time",
+                    "type": "u64"
+                },
+                {
+                    "name": "end_time",
+                    "type": "u64"
+                }
+            ]
+        },
+        "ProposalStatus": {
+            "type": "enum",
+            "variants": [
+                {
+                    "name": "Invalid",
+                    "discriminant": 0
+                },
+                {
+                    "name": "Pending",
+                    "discriminant": 1
+                },
+                {
+                    "name": "Active",
+                    "discriminant": 2
+                },
+                {
+                    "name": "Approved",
+                    "discriminant": 3
+                },
+                {
+                    "name": "Rejected",
+                    "discriminant": 4
+                },
+                {
+                    "name": "Failed",
+                    "discriminant": 5
+                }
+            ]
+        },
+        "ProposalVoteCount": {
+            "type": "struct",
+            "fields": [
+                {
+                    "name": "approve",
+                    "type": "BigUint"
+                },
+                {
+                    "name": "abstain",
+                    "type": "BigUint"
+                },
+                {
+                    "name": "reject",
+                    "type": "BigUint"
+                },
+                {
+                    "name": "invalid",
+                    "type": "BigUint"
+                }
+            ]
+        },
+        "StakeEvent": {
+            "type": "struct",
+            "fields": [
+                {
+                    "name": "caller",
+                    "type": "Address"
+                },
+                {
+                    "name": "payments",
+                    "type": "List<EsdtTokenPayment>"
+                }
+            ]
+        },
+        "StakingContext": {
+            "type": "struct",
+            "fields": [
+                {
+                    "name": "users_stake",
+                    "type": "List<EsdtTokenPayment>"
+                },
+                {
+                    "name": "last_proposals_context",
+                    "type": "ProposalContext"
+                },
+                {
+                    "name": "active_proposal_ids",
+                    "type": "List<u64>"
+                }
+            ]
+        },
+        "VoteContext": {
+            "type": "struct",
+            "fields": [
+                {
+                    "name": "decision",
+                    "type": "VoteDecision"
+                },
+                {
+                    "name": "voting_power",
+                    "type": "BigUint"
+                },
+                {
+                    "name": "timestamp",
+                    "type": "u64"
+                },
+                {
+                    "name": "block",
+                    "type": "u64"
+                },
+                {
+                    "name": "epoch",
+                    "type": "u64"
+                }
+            ]
+        },
+        "VoteDecision": {
+            "type": "enum",
+            "docs": [
+                "Representation of voting options",
+                "Invalid it not considered a valid vote thus is being completely",
+                "ignored from the voting validation logic"
+            ],
+            "variants": [
+                {
+                    "name": "Invalid",
+                    "discriminant": 0
+                },
+                {
+                    "name": "Approve",
+                    "discriminant": 1
+                },
+                {
+                    "name": "Abstain",
+                    "discriminant": 2
+                },
+                {
+                    "name": "Reject",
+                    "discriminant": 3
+                }
+            ]
+        }
+    }
+}

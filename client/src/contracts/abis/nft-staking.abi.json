@@ -1,0 +1,724 @@
+{
+    "buildInfo": {
+        "rustc": {
+            "version": "1.81.0-nightly",
+            "commitHash": "684b3553f70148ded97a80371c2405984d4f6aa7",
+            "commitDate": "2024-06-20",
+            "channel": "Nightly",
+            "short": "rustc 1.81.0-nightly (684b3553f 2024-06-20)"
+        },
+        "contractCrate": {
+            "name": "nft-staking",
+            "version": "0.0.0"
+        },
+        "framework": {
+            "name": "multiversx-sc",
+            "version": "0.56.1"
+        }
+    },
+    "name": "NftStaking",
+    "constructor": {
+        "inputs": [],
+        "outputs": []
+    },
+    "upgradeConstructor": {
+        "inputs": [],
+        "outputs": []
+    },
+    "endpoints": [
+        {
+            "name": "stake",
+            "mutability": "mutable",
+            "payableInTokens": [
+                "*"
+            ],
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "BigUint"
+                }
+            ]
+        },
+        {
+            "name": "unstake",
+            "mutability": "mutable",
+            "inputs": [
+                {
+                    "name": "unstake_request",
+                    "type": "variadic<EsdtTokenPayment>",
+                    "multi_arg": true
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "BigUint"
+                }
+            ]
+        },
+        {
+            "name": "claimUnstaked",
+            "mutability": "mutable",
+            "inputs": [],
+            "outputs": []
+        },
+        {
+            "name": "claimRewards",
+            "mutability": "mutable",
+            "inputs": [],
+            "outputs": []
+        },
+        {
+            "name": "getAllowedNftCollections",
+            "mutability": "readonly",
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "variadic<TokenIdentifier>",
+                    "multi_result": true
+                }
+            ]
+        },
+        {
+            "name": "getRewardTokenIds",
+            "mutability": "readonly",
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "variadic<TokenIdentifier>",
+                    "multi_result": true
+                }
+            ]
+        },
+        {
+            "name": "getStakeQuantityRaw",
+            "mutability": "readonly",
+            "inputs": [
+                {
+                    "name": "address",
+                    "type": "Address"
+                },
+                {
+                    "name": "token_id",
+                    "type": "TokenIdentifier"
+                },
+                {
+                    "name": "nonce",
+                    "type": "u64"
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "BigUint"
+                }
+            ]
+        },
+        {
+            "name": "getStakedItemsRaw",
+            "mutability": "readonly",
+            "inputs": [
+                {
+                    "name": "address",
+                    "type": "Address"
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "variadic<tuple<TokenIdentifier,u64>>",
+                    "multi_result": true
+                }
+            ]
+        },
+        {
+            "name": "getNftCollectionScore",
+            "mutability": "readonly",
+            "inputs": [
+                {
+                    "name": "token_id",
+                    "type": "TokenIdentifier"
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "BigUint"
+                }
+            ]
+        },
+        {
+            "name": "getNftCollectionNonceScore",
+            "mutability": "readonly",
+            "inputs": [
+                {
+                    "name": "token_id",
+                    "type": "TokenIdentifier"
+                },
+                {
+                    "name": "nonce",
+                    "type": "u64"
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "BigUint"
+                }
+            ]
+        },
+        {
+            "name": "getStakingDisabled",
+            "mutability": "readonly",
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "bool"
+                }
+            ]
+        },
+        {
+            "name": "getUnstakingItemsRaw",
+            "mutability": "readonly",
+            "inputs": [
+                {
+                    "name": "address",
+                    "type": "Address"
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "variadic<tuple<u64,List<EsdtTokenPayment>>>",
+                    "multi_result": true
+                }
+            ]
+        },
+        {
+            "name": "getUnstakingPenalty",
+            "mutability": "readonly",
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "u64"
+                }
+            ]
+        },
+        {
+            "name": "getStakingInfo",
+            "mutability": "readonly",
+            "inputs": [
+                {
+                    "name": "address",
+                    "type": "Address"
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "StakingInfo"
+                }
+            ]
+        },
+        {
+            "name": "getPendingRewards",
+            "mutability": "readonly",
+            "inputs": [
+                {
+                    "name": "address",
+                    "type": "Address"
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "List<EsdtTokenPayment>"
+                }
+            ]
+        },
+        {
+            "name": "getStakedItems",
+            "mutability": "readonly",
+            "inputs": [
+                {
+                    "name": "address",
+                    "type": "Address"
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "List<EsdtTokenPayment>"
+                }
+            ]
+        },
+        {
+            "name": "getUnstakingItems",
+            "mutability": "readonly",
+            "inputs": [
+                {
+                    "name": "address",
+                    "type": "Address"
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "List<UnstakingBatch>"
+                }
+            ]
+        },
+        {
+            "name": "getStakeQuantity",
+            "mutability": "readonly",
+            "inputs": [
+                {
+                    "name": "address",
+                    "type": "Address"
+                },
+                {
+                    "name": "token_id",
+                    "type": "TokenIdentifier"
+                },
+                {
+                    "name": "nonce",
+                    "type": "u64"
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "BigUint"
+                }
+            ]
+        },
+        {
+            "name": "getUserStakingScore",
+            "mutability": "readonly",
+            "inputs": [
+                {
+                    "name": "address",
+                    "type": "Address"
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "BigUint"
+                }
+            ]
+        },
+        {
+            "name": "getAggregatedStakingScore",
+            "mutability": "readonly",
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "BigUint"
+                }
+            ]
+        },
+        {
+            "name": "getLastDistributionRound",
+            "mutability": "readonly",
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "u64"
+                }
+            ]
+        },
+        {
+            "name": "getRewardRate",
+            "mutability": "readonly",
+            "inputs": [
+                {
+                    "name": "token_id",
+                    "type": "TokenIdentifier"
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "BigUint"
+                }
+            ]
+        },
+        {
+            "name": "isRewardToken",
+            "mutability": "readonly",
+            "inputs": [
+                {
+                    "name": "token_id",
+                    "type": "TokenIdentifier"
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "bool"
+                }
+            ]
+        },
+        {
+            "name": "getPendingTokenReward",
+            "mutability": "readonly",
+            "inputs": [
+                {
+                    "name": "address",
+                    "type": "Address"
+                },
+                {
+                    "name": "token_id",
+                    "type": "TokenIdentifier"
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "BigUint"
+                }
+            ]
+        },
+        {
+            "name": "getUserStakedScore",
+            "mutability": "readonly",
+            "inputs": [
+                {
+                    "name": "address",
+                    "type": "Address"
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "BigUint"
+                }
+            ]
+        },
+        {
+            "name": "getAggregatedStakedScore",
+            "mutability": "readonly",
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "BigUint"
+                }
+            ]
+        },
+        {
+            "name": "getCurrentRewardRate",
+            "mutability": "readonly",
+            "inputs": [
+                {
+                    "name": "reward_token_id",
+                    "type": "TokenIdentifier"
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "BigUint"
+                }
+            ]
+        },
+        {
+            "name": "getUserRewardRate",
+            "mutability": "readonly",
+            "inputs": [
+                {
+                    "name": "user",
+                    "type": "Address"
+                },
+                {
+                    "name": "reward_token_id",
+                    "type": "TokenIdentifier"
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "BigUint"
+                }
+            ]
+        },
+        {
+            "name": "getUserStoredRewards",
+            "mutability": "readonly",
+            "inputs": [
+                {
+                    "name": "user",
+                    "type": "Address"
+                },
+                {
+                    "name": "reward_token_id",
+                    "type": "TokenIdentifier"
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "BigUint"
+                }
+            ]
+        },
+        {
+            "name": "getDistributionAmountPerRound",
+            "mutability": "readonly",
+            "inputs": [
+                {
+                    "name": "start_round",
+                    "type": "u64"
+                },
+                {
+                    "name": "end_round",
+                    "type": "u64"
+                },
+                {
+                    "name": "total_distribution_amount",
+                    "type": "BigUint"
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "BigUint"
+                }
+            ]
+        },
+        {
+            "name": "getLastDistributionRoundRaw",
+            "mutability": "readonly",
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "u64"
+                }
+            ]
+        },
+        {
+            "name": "getDistributionPlanRaw",
+            "mutability": "readonly",
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "variadic<tuple<TokenIdentifier,u64,u64,BigUint>>",
+                    "multi_result": true
+                }
+            ]
+        },
+        {
+            "name": "disableStaking",
+            "onlyOwner": true,
+            "mutability": "mutable",
+            "inputs": [],
+            "outputs": []
+        },
+        {
+            "name": "enableStaking",
+            "onlyOwner": true,
+            "mutability": "mutable",
+            "inputs": [],
+            "outputs": []
+        },
+        {
+            "name": "allowCollections",
+            "onlyOwner": true,
+            "mutability": "mutable",
+            "inputs": [
+                {
+                    "name": "collections",
+                    "type": "variadic<TokenIdentifier>",
+                    "multi_arg": true
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "docs": [
+                "I don't recommend using this function as it won't update user's storage.",
+                "Its effect as of now is to stop other users from staking NFTs from the given collections."
+            ],
+            "name": "disallowCollections",
+            "onlyOwner": true,
+            "mutability": "mutable",
+            "inputs": [
+                {
+                    "name": "collections",
+                    "type": "variadic<TokenIdentifier>",
+                    "multi_arg": true
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "docs": [
+                "Distribute rewards to all stakers.",
+                "Expects at least a payment that consists of the total amount of tokens to be distributed.",
+                "Used for unscheduled reward distributions (e.g. airdrop, campaigns, module integrations etc)."
+            ],
+            "name": "distributeRewards",
+            "onlyOwner": true,
+            "mutability": "mutable",
+            "payableInTokens": [
+                "*"
+            ],
+            "inputs": [],
+            "outputs": []
+        },
+        {
+            "docs": [
+                "Set the unstaking penalty.",
+                "A period of time in seconds that users have to wait before they can claim their unstaked NFTs.",
+                "Changing this value will affect all users and ongoing unstaking processes."
+            ],
+            "name": "setUnstakingPenalty",
+            "onlyOwner": true,
+            "mutability": "mutable",
+            "inputs": [
+                {
+                    "name": "penalty",
+                    "type": "u64"
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "docs": [
+                "Change the score for all NFTs in the collection.",
+                "Will also add the collection to the list of allowed collections.",
+                "This will *NOT* update the score for already staked NFTs."
+            ],
+            "name": "setCollectionScore",
+            "onlyOwner": true,
+            "mutability": "mutable",
+            "inputs": [
+                {
+                    "name": "collection",
+                    "type": "TokenIdentifier"
+                },
+                {
+                    "name": "score",
+                    "type": "u64"
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "docs": [
+                "Change the score for a specific nonce of an NFT in the collection.",
+                "Will also add the collection to the list of allowed collections.",
+                "This will *NOT* update the score for already staked NFTs."
+            ],
+            "name": "setCollectionNonceScore",
+            "onlyOwner": true,
+            "mutability": "mutable",
+            "inputs": [
+                {
+                    "name": "collection",
+                    "type": "TokenIdentifier"
+                },
+                {
+                    "name": "nonce",
+                    "type": "u64"
+                },
+                {
+                    "name": "score",
+                    "type": "u64"
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "docs": [
+                "Create a new distribution plan.",
+                "Expects a single payment that consists of the total amount of tokens to be distributed.",
+                "The amount per round will be calculated based on the total amount and the number of rounds."
+            ],
+            "name": "createDistributionPlan",
+            "onlyOwner": true,
+            "mutability": "mutable",
+            "payableInTokens": [
+                "*"
+            ],
+            "inputs": [
+                {
+                    "name": "start_round",
+                    "type": "u64"
+                },
+                {
+                    "name": "end_round",
+                    "type": "u64"
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "docs": [
+                "Remove a distribution plan.",
+                "Must provide the exact plan configuration to remove."
+            ],
+            "name": "removeDistributionPlan",
+            "onlyOwner": true,
+            "mutability": "mutable",
+            "inputs": [
+                {
+                    "name": "reward_token_id",
+                    "type": "TokenIdentifier"
+                },
+                {
+                    "name": "start_round",
+                    "type": "u64"
+                },
+                {
+                    "name": "end_round",
+                    "type": "u64"
+                },
+                {
+                    "name": "amount_per_round",
+                    "type": "BigUint"
+                }
+            ],
+            "outputs": []
+        }
+    ],
+    "esdtAttributes": [],
+    "hasCallback": false,
+    "types": {
+        "EsdtTokenPayment": {
+            "type": "struct",
+            "fields": [
+                {
+                    "name": "token_identifier",
+                    "type": "TokenIdentifier"
+                },
+                {
+                    "name": "token_nonce",
+                    "type": "u64"
+                },
+                {
+                    "name": "amount",
+                    "type": "BigUint"
+                }
+            ]
+        },
+        "StakingInfo": {
+            "type": "struct",
+            "fields": [
+                {
+                    "name": "staked_items",
+                    "type": "List<EsdtTokenPayment>"
+                },
+                {
+                    "name": "staked_score",
+                    "type": "BigUint"
+                },
+                {
+                    "name": "aggregated_staked_score",
+                    "type": "BigUint"
+                },
+                {
+                    "name": "pending_rewards",
+                    "type": "List<EsdtTokenPayment>"
+                },
+                {
+                    "name": "unstaking_items",
+                    "type": "List<UnstakingBatch>"
+                }
+            ]
+        },
+        "UnstakingBatch": {
+            "type": "struct",
+            "fields": [
+                {
+                    "name": "unstake_timestamp",
+                    "type": "u64"
+                },
+                {
+                    "name": "unstake_items",
+                    "type": "List<EsdtTokenPayment>"
+                }
+            ]
+        }
+    }
+}
