@@ -142,13 +142,16 @@ const useNftStaking = () => {
   const stakeNft = async (
     payments: Array<{ token: string; nonce: number; amount: number }>
   ) => {
+    console.log("payments", payments);
+
     const contract = getNftStakingContract();
     const paymentsArg = payments.map(({ token, nonce, amount }) => {
       return TokenTransfer.semiFungible(token, nonce, amount);
     });
 
+    console.log("paymentsArg", paymentsArg);
     const interaction = contract.methods
-      .stakeNft([])
+      .stake([])
       .withGasLimit(DEFAULT_GAS_LIMIT)
       .withMultiESDTNFTTransfer(paymentsArg);
     return handleSendTransaction(interaction);
@@ -159,11 +162,15 @@ const useNftStaking = () => {
   ) => {
     const contract = getNftStakingContract();
     const paymentsArg = payments.map(({ token, nonce, amount }) => {
-      return TokenTransfer.semiFungible(token, nonce, amount);
+      return {
+        token_identifier: token,
+        token_nonce: nonce,
+        amount: amount.toString(),
+      };
     });
 
     const interaction = contract.methods
-      .unstakeNft([paymentsArg])
+      .unstake(paymentsArg)
       .withGasLimit(DEFAULT_GAS_LIMIT);
 
     return handleSendTransaction(interaction);

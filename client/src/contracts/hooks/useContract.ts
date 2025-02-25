@@ -5,11 +5,17 @@ import {
   ProxyNetworkProvider,
   Interaction,
   ResultsParser,
+  Address,
 } from "@multiversx/sdk-core/out";
-import { useGetNetworkConfig } from "@multiversx/sdk-dapp/hooks";
+import {
+  useGetAccountInfo,
+  useGetNetworkConfig,
+} from "@multiversx/sdk-dapp/hooks";
+import { sendTransactions } from "@multiversx/sdk-dapp/services";
 import { getProviderUrl } from "../config";
 
 const useContract = () => {
+  const { address } = useGetAccountInfo();
   const { network } = useGetNetworkConfig();
 
   const create = (abi: AbiRegistry, address: IAddress) => {
@@ -23,18 +29,28 @@ const useContract = () => {
     return new ProxyNetworkProvider(getProviderUrl());
   };
 
-  const handleQueryContract = async <T>(interaction: Interaction): Promise<T> => {
+  const handleQueryContract = async <T>(
+    interaction: Interaction
+  ): Promise<T> => {
     const provider = getProvider();
-    const result = await provider.queryContract(interaction.check().buildQuery());
-    const data = new ResultsParser().parseQueryResponse(result, interaction.getEndpoint());
+    const result = await provider.queryContract(
+      interaction.check().buildQuery()
+    );
+    const data = new ResultsParser()
+      .parseQueryResponse(result, interaction.getEndpoint())
+      .firstValue?.valueOf();
     return data as T;
   };
 
   const handleSendTransaction = async (interaction: Interaction) => {
-    const provider = getProvider();
-    return provider.sendTransaction(
-      interaction.withChainID(network.chainID).check().buildTransaction()
-    );
+    const tx = interaction
+      .withSender(Address.fromBech32(address))
+      .withChainID(network.chainId)
+      .buildTransaction();
+    await sendTransactions({
+      transactions: [tx],
+      redirectAfterSign: false,
+    });
   };
 
   return {

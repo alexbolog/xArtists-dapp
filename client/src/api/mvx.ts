@@ -32,8 +32,12 @@ export interface ApiNft {
     ticker: string;
 }
 
-export const getAccountNfts = async (address: string): Promise<ApiNft[]> => {
-    const response = await fetch(`${getApiUrl()}/accounts/${address}/nfts`);
+export const getAccountNfts = async (address: string, identifiers?: string[]): Promise<ApiNft[]> => {
+    let requestUrl = `${getApiUrl()}/accounts/${address}/nfts`;
+    if (identifiers) {
+        requestUrl += `?identifiers=${identifiers.join(',')}`;
+    }
+    const response = await fetch(requestUrl);
     if (!response.ok) {
         throw new Error("Failed to fetch NFTs");
     }

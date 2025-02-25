@@ -24,6 +24,7 @@ import { useGetAccountInfo, useGetLoginInfo } from "@multiversx/sdk-dapp/hooks";
 import useNftStaking from "@/contracts/hooks/useNftStaking";
 import BigNumber from "bignumber.js";
 import { ApiNft, getAccountNfts } from "@/api/mvx";
+import { getContractAddress } from "@/contracts/config";
 
 // Mock data - in production these would come from the API
 const TOTAL_STAKE_POWER = 100000;
@@ -52,69 +53,102 @@ export default function StakePage() {
 
   const { address } = useGetAccountInfo();
   const { isLoggedIn } = useGetLoginInfo();
-  const { getStakingInfo } = useNftStaking();
+  const { getStakingInfo, stakeNft, unstakeNft } = useNftStaking();
 
-  const { data: stakedNftsData, isLoading: stakedNftsLoading } = useQuery<NFT[]>({
-    queryKey: ["/api/users/1/nfts", "staked", address],
-    enabled: isLoggedIn,
+  // Create a base query for staking info
+  const { data: stakingInfo, isLoading: stakingInfoLoading } = useQuery({
+    queryKey: ["stakingInfo", address],
     queryFn: async () => {
-      if (!isLoggedIn) return [];
-      console.log("Api nfts", await getAccountNfts(address));
-      const response = await fetch("/api/users/1/nfts");
-      if (!response.ok) {
-        throw new Error('Failed to fetch NFTs');
+      if (!isLoggedIn) {
+        return {
+          staked_items: [],
+          pending_rewards: [],
+          staked_score: "0",
+        };
       }
-      const data = await response.json();
-      return data.filter((nft: NFT) => nft.isStaked);
-    }
+      return getStakingInfo(address);
+    },
   });
 
-  const { data: walletNftsData, isLoading: walletNftsLoading } = useQuery<ApiNft[]>({
-    queryKey: ["/api/users/1/nfts", "wallet", address],
+  // Use staked items from the same staking info
+  const { data: stakedNftsData, isLoading: stakedNftsLoading } = useQuery<
+    ApiNft[]
+  >({
+    queryKey: ["stakingInfo", address, "nfts"],
+    enabled: !!stakingInfo,
+    staleTime: Infinity, // Optional: prevent unnecessary refetches
+    queryFn: async () => {
+      if (!stakingInfo) return [];
+
+      // const stakedIdentifiers = stakingInfo.staked_items.map((item) => {
+      //   let nonce = item.token_nonce.toString(16);
+      //   if (nonce.length % 2 === 1) {
+      //     nonce = "0" + nonce;
+      //   }
+      //   return `${item.token_identifier}-${nonce}`;
+      // });
+
+      const allStakedNfts = await getAccountNfts(
+        getContractAddress("NFT_STAKING")
+      );
+      console.log("stakingInfo", stakingInfo?.staked_items);
+      console.log("allStakedNfts", allStakedNfts);
+      const stakedNfts = allStakedNfts
+        .filter((nft) =>
+          stakingInfo?.staked_items.some((item) => {
+            return (
+              item.token_identifier === nft.collection &&
+              parseInt(item.token_nonce.toString()) === nft.nonce
+            );
+          })
+        )
+        .map((nft) => ({
+          ...nft,
+          amount: stakingInfo?.staked_items.find(
+            (item) =>
+              item.token_identifier === nft.collection &&
+              parseInt(item.token_nonce.toString()) === nft.nonce
+          )?.amount,
+        }));
+      console.log("stakedNfts", stakedNfts);
+      return stakedNfts;
+    },
+  });
+
+  const { data: walletNftsData, isLoading: walletNftsLoading } = useQuery<
+    ApiNft[]
+  >({
+    queryKey: [`/api/users/${address}/nfts`, "wallet", address],
     enabled: isLoggedIn,
     queryFn: async () => {
       if (!isLoggedIn) return [];
       const response = await getAccountNfts(address);
-      console.log('wallet nfts API', response);
       return response;
-    }
-  });
-
-  const {
-    data: stakingStats,
-    isLoading: statsLoading,
-  } = useQuery<StakingStats>({
-    queryKey: ["stakingStats", { userId: address }],
-    queryFn: async () => {
-      if (!isLoggedIn) {
-        return {
-          totalStaked: 0,
-          pendingRewards: "0",
-          stakePower: 0,
-        };
-      }
-
-      try {
-        const stakingInfo = await getStakingInfo(address);
-        return {
-          totalStaked: stakingInfo.staked_items.length,
-          pendingRewards: stakingInfo.pending_rewards
-            .reduce(
-              (acc, reward) => acc.plus(BigNumber(reward.amount).shiftedBy(-18)),
-              BigNumber(0)
-            )
-            .toString(),
-          stakePower: Number(stakingInfo.staked_score),
-        };
-      } catch (error) {
-        throw new Error(
-          error instanceof Error
-            ? error.message
-            : "Failed to fetch staking info"
-        );
-      }
     },
   });
+
+  // Derive stats from the staking info
+  const { data: stakingStats, isLoading: statsLoading } =
+    useQuery<StakingStats>({
+      queryKey: ["stakingInfo", address, "stats"],
+      enabled: !!stakingInfo,
+      staleTime: Infinity, // Optional: prevent unnecessary refetches
+      queryFn: () => ({
+        totalStaked:
+          stakingInfo?.staked_items.reduce(
+            (acc, item) => acc + parseInt(item.amount),
+            0
+          ) || 0,
+        pendingRewards: (
+          stakingInfo?.pending_rewards.reduce(
+            (acc, reward) => acc.plus(BigNumber(reward.amount).shiftedBy(-18)),
+            BigNumber(0)
+          ) || 0
+        ).toString(),
+        stakePower:
+          Number(stakingInfo?.staked_score.toString() || "0") / 10 ** 6,
+      }),
+    });
 
   const isLoading = walletNftsLoading || stakedNftsLoading || statsLoading;
 
@@ -187,7 +221,6 @@ export default function StakePage() {
     const quantities = isStaked ? stakedQuantities : walletQuantities;
     const selected = isStaked ? selectedStaked : selectedWallet;
     const currentQuantity = quantities[nft.identifier] || 0;
-    console.log('nft type', nft);
     return (
       <div
         key={nft.identifier}
@@ -237,7 +270,10 @@ export default function StakePage() {
           />
           <div className="relative">
             <img
-              src={nft.url || `https://picsum.photos/seed/${nft.identifier}/100/100`}
+              src={
+                nft.url ||
+                `https://picsum.photos/seed/${nft.identifier}/100/100`
+              }
               alt={`NFT ${nft.identifier}`}
               className="w-12 h-12 md:w-16 md:h-16 rounded-lg object-cover"
             />
@@ -256,7 +292,8 @@ export default function StakePage() {
                 variant="outline"
                 className="text-yellow-500 border-yellow-500/20 text-xs"
               >
-                {1.0} Power {/* Replace with actual staking yield calculation */}
+                {1.0} Power{" "}
+                {/* Replace with actual staking yield calculation */}
               </Badge>
               <Badge
                 variant="outline"
@@ -310,7 +347,47 @@ export default function StakePage() {
   }
 
   const userStakePercentage =
-    ((stakingStats?.stakePower || 0) / TOTAL_STAKE_POWER) * 100;
+    ((stakingStats?.stakePower || 0) /
+      (parseFloat(stakingInfo?.staked_score || "0") / 10 ** 6)) *
+    100;
+
+  const handleStakeSelected = async (
+    e: React.MouseEvent<HTMLButtonElement>
+  ) => {
+    e.stopPropagation();
+    console.log("selectedWallet", selectedWallet);
+    await stakeNft(
+      Array.from(selectedWallet).map((identifier: string) => ({
+        token: `${identifier.split("-")[0]}-${identifier.split("-")[1]}`,
+        nonce: parseInt(identifier.split("-")[2], 16),
+        amount: walletQuantities[identifier] || 1,
+      }))
+    );
+  };
+
+  const handleUnstakeSelected = async (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+    console.log("selectedStaked", selectedStaked, stakedQuantities);
+    
+    try {
+      await unstakeNft(
+        Array.from(selectedStaked).map((identifier: string) => {
+          const [collection, ticker, nonce] = identifier.split("-");
+          return {
+            token: `${collection}-${ticker}`,
+            nonce: parseInt(nonce), // Convert string nonce to number
+            amount: stakedQuantities[identifier] || 1,
+          };
+        })
+      );
+
+      // Clear selections after successful unstake
+      setSelectedStaked(new Set());
+      setStakedQuantities({});
+    } catch (error) {
+      console.error("Unstaking failed:", error);
+    }
+  };
 
   return (
     <div className="space-y-4 md:space-y-8">
@@ -377,7 +454,7 @@ export default function StakePage() {
       </div>
 
       {/* Staked NFTs */}
-      {/* <Card>
+      <Card>
         <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-2 sm:space-y-0">
           <CardTitle>Your Staked NFTs</CardTitle>
           {stakedNfts.length > 0 && (
@@ -392,7 +469,8 @@ export default function StakePage() {
                   const newQuantities = {};
                   stakedNfts.forEach((nft) => {
                     if (nft.type === "SemiFungibleESDT") {
-                      newQuantities[nft.identifier] = parseInt(nft.balance) || 1;
+                      newQuantities[nft.identifier] =
+                        parseInt(nft.balance) || 1;
                     }
                   });
                   setStakedQuantities(newQuantities);
@@ -404,6 +482,7 @@ export default function StakePage() {
                 variant="destructive"
                 size="sm"
                 disabled={selectedStaked.size === 0}
+                onClick={handleUnstakeSelected}
               >
                 Unstake Selected ({stakedSum.toFixed(1)} Power)
               </Button>
@@ -425,7 +504,7 @@ export default function StakePage() {
             )}
           </div>
         </CardContent>
-      </Card> */}
+      </Card>
 
       {/* Wallet NFTs */}
       <Collapsible open={walletOpen} onOpenChange={setWalletOpen}>
@@ -448,7 +527,8 @@ export default function StakePage() {
                           const newQuantities = {};
                           walletNfts.forEach((nft) => {
                             if (nft.type === "SemiFungibleESDT") {
-                              newQuantities[nft.identifier] = parseInt(nft.balance) || 1;
+                              newQuantities[nft.identifier] =
+                                parseInt(nft.balance) || 1;
                             }
                           });
                           setWalletQuantities(newQuantities);
@@ -462,7 +542,7 @@ export default function StakePage() {
                           size="sm"
                           className="bg-green-500 hover:bg-green-600"
                           disabled={selectedWallet.size === 0}
-                          onClick={(e) => e.stopPropagation()}
+                          onClick={handleStakeSelected}
                         >
                           Stake Selected ({walletSum.toFixed(1)} Power)
                         </Button>
