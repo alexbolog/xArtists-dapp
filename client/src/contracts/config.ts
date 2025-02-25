@@ -1,7 +1,13 @@
 const getContractAddress = (contractName: string): string => {
-  return process.env[`${contractName}_ADDRESS`] || "";
+  return import.meta.env[`VITE_SC_ADDRESS_${contractName}`] || "";
 };
 
 const getProviderUrl = (): string => {
-  return process.env.PROVIDER_URL || "";
+  return import.meta.env.VITE_PROVIDER_URL || "";
 };
+
+const getChainId = (): string => {
+  return import.meta.env.VITE_CHAIN_ID || "";
+};
+
+export { getContractAddress, getProviderUrl, getChainId };

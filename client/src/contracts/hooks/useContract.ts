@@ -6,6 +6,7 @@ import {
   Interaction,
 } from "@multiversx/sdk-core/out";
 import { useGetNetworkConfig } from "@multiversx/sdk-dapp/hooks";
+import { getProviderUrl } from "../config";
 
 const useContract = () => {
   const { network } = useGetNetworkConfig();

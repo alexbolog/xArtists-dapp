@@ -16,11 +16,14 @@ import Create from "@/pages/create";
 import Profile from "@/pages/profile";
 import Governance from "@/pages/governance";
 import Proposal from "@/pages/proposal";
+import Stake from "@/pages/stake";
 import NotFound from "@/pages/not-found";
+import { getChainId } from "./contracts/config";
 
 function Router() {
+  const environment = getChainId() === "D" ? "devnet" : "mainnet";
   return (
-    <DappProvider environment="devnet">
+    <DappProvider environment={environment}>
       <TransactionsToastList />
       <SignTransactionsModals />
       <NotificationModal />
@@ -33,6 +36,7 @@ function Router() {
           <Route path="/governance" component={Governance} />
           <Route path="/proposal/:id" component={Proposal} />
           <Route path="/profile" component={Profile} />
+          <Route path="/stake" component={Stake} />
           <Route
             path="/unlock"
             component={() => <UnlockPage loginRoute={"/unlock"} />}

@@ -127,6 +127,34 @@ export async function registerRoutes(app: Express) {
     }
   });
 
+  // Get user's NFTs
+  app.get("/api/users/:id/nfts", async (req, res) => {
+    const nfts = await storage.listNFTs();
+    // Process NFTs to ensure correct types
+    const processedNfts = nfts.map(nft => ({
+      ...nft,
+      isStaked: nft.isStaked === true,
+      stakingYield: nft.stakingYield ? String(nft.stakingYield) : "0"
+    }));
+    res.json(processedNfts);
+  });
+
+  // Get user's staking stats
+  app.get("/api/users/:id/staking", async (req, res) => {
+    const nfts = await storage.listNFTs();
+    const stakedNfts = nfts.filter(nft => nft.isStaked);
+
+    const stakingStats = {
+      totalStaked: stakedNfts.length,
+      pendingRewards: "1.5",
+      stakePower: stakedNfts.reduce((sum, nft) =>
+        sum + parseFloat(nft.stakingYield || "0"), 0
+      )
+    };
+
+    res.json(stakingStats);
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

@@ -1,23 +1,25 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { 
-  ThumbsUp, 
-  ThumbsDown, 
-  Clock, 
-  CheckCircle2, 
+import {
+  ThumbsUp,
+  ThumbsDown,
+  Clock,
+  CheckCircle2,
   XCircle,
   PlusCircle,
   ChevronRight,
   Vote as VoteIcon
 } from "lucide-react";
 import type { Proposal } from "@shared/schema";
+import CreateProposalModal from "@/components/create-proposal-modal";
 
 function ProposalCard({ proposal }: { proposal: Proposal }) {
   const totalVotes = Number(proposal.votesFor) + Number(proposal.votesAgainst);
-  const forPercentage = totalVotes > 0 
-    ? (Number(proposal.votesFor) / totalVotes) * 100 
+  const forPercentage = totalVotes > 0
+    ? (Number(proposal.votesFor) / totalVotes) * 100
     : 0;
 
   const getStatusConfig = () => {
@@ -53,9 +55,9 @@ function ProposalCard({ proposal }: { proposal: Proposal }) {
   const userPastVote = proposal.status !== 'active' ? 'for' : null;
 
   return (
-    <Card 
+    <Card
       className={`
-        ${proposal.status === 'active' ? 'border-primary/50' : ''} 
+        ${proposal.status === 'active' ? 'border-primary/50' : ''}
         ${proposal.status !== 'active' ? 'opacity-75' : ''}
       `}
     >
@@ -137,6 +139,7 @@ function ProposalCard({ proposal }: { proposal: Proposal }) {
 }
 
 export default function Governance() {
+  const [createModalOpen, setCreateModalOpen] = useState(false);
   const { data: proposals, isLoading } = useQuery<Proposal[]>({
     queryKey: ["/api/proposals"],
   });
@@ -153,11 +156,16 @@ export default function Governance() {
             Vote on proposals and shape the future of the platform
           </p>
         </div>
-        <Button className="gap-2">
+        <Button className="gap-2" onClick={() => setCreateModalOpen(true)}>
           <PlusCircle className="h-4 w-4" />
           Create Proposal
         </Button>
       </div>
+
+      <CreateProposalModal
+        open={createModalOpen}
+        onOpenChange={setCreateModalOpen}
+      />
 
       {isLoading ? (
         <div className="space-y-4">
@@ -197,7 +205,9 @@ export default function Governance() {
                 <p className="text-muted-foreground mb-4">
                   No active proposals at the moment
                 </p>
-                <Button>Create the First Proposal</Button>
+                <Button onClick={() => setCreateModalOpen(true)}>
+                  Create the First Proposal
+                </Button>
               </CardContent>
             </Card>
           )}

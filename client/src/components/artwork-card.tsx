@@ -1,7 +1,7 @@
 import { Link } from "wouter";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Heart, Tag } from "lucide-react";
+import { Heart, ShoppingCart, Send } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import type { Artwork } from "@shared/schema";
 
@@ -14,6 +14,9 @@ export default function ArtworkCard({
   artwork, 
   showActions = true,
 }: ArtworkCardProps) {
+  const forSale = Boolean(artwork.price);
+  const priceDisplay = forSale ? `${artwork.price} ETH` : "0.3 ETH"; // Demo last sold price
+
   return (
     <Card className="group relative overflow-hidden transition-all hover:shadow-lg">
       <div className="absolute right-2 top-2 z-10 flex gap-2">
@@ -41,12 +44,10 @@ export default function ArtworkCard({
                 <h3 className="font-semibold text-lg mb-1 line-clamp-1">{artwork.title}</h3>
                 <p className="text-sm text-muted-foreground">by {artwork.artist}</p>
               </div>
-              {artwork.price && (
-                <div className="text-right">
-                  <p className="text-sm text-muted-foreground">Price</p>
-                  <p className="font-semibold">{artwork.price} ETH</p>
-                </div>
-              )}
+              <div className="text-right">
+                <p className="text-sm text-muted-foreground">{forSale ? "Price" : "Last Sold"}</p>
+                <p className="font-semibold">{priceDisplay}</p>
+              </div>
             </div>
 
             {artwork.description && (
@@ -66,16 +67,25 @@ export default function ArtworkCard({
             className="flex-1 bg-gradient-to-r from-primary to-primary-600 hover:opacity-90 transition-opacity"
           >
             <Heart className="h-4 w-4 mr-1" />
-            Like
+            Like {artwork.voteCount ? `(${artwork.voteCount})` : ''}
           </Button>
-          {artwork.price && (
+          {forSale ? (
             <Button 
               variant="outline" 
               size="sm" 
               className="flex-1 border-primary/20 hover:border-primary transition-colors"
             >
-              <Tag className="h-4 w-4 mr-1" />
+              <ShoppingCart className="h-4 w-4 mr-1" />
               Buy
+            </Button>
+          ) : (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="flex-1 border-primary/20 hover:border-primary transition-colors"
+            >
+              <Send className="h-4 w-4 mr-1" />
+              Contact
             </Button>
           )}
         </CardFooter>

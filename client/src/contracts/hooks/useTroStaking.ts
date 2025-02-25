@@ -2,15 +2,17 @@ import useContract from "./useContract";
 import abi from "../abis/tro-staking.abi.json";
 import { AbiRegistry, Address, TokenTransfer } from "@multiversx/sdk-core/out";
 import { BigNumber } from "bignumber.js";
+import { getContractAddress } from "../config";
 
 const DEFAULT_GAS_LIMIT = 25_000_000;
 
 const useTroStaking = () => {
+  const CONTRACT_ADDRESS_KEY = "TRO_GOVERNANCE";
   const { create, handleQueryContract, handleSendTransaction } = useContract();
 
   // Utility functions
   const getTroStakingContract = () => {
-    const address = getContractAddress("TRO_STAKING");
+    const address = getContractAddress(CONTRACT_ADDRESS_KEY);
     const abiRegistry = AbiRegistry.create(abi);
     return create(abiRegistry, Address.fromBech32(address));
   };

@@ -2,6 +2,36 @@ import { pgTable, text, serial, integer, boolean, timestamp, json, decimal } fro
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+// Artwork type definitions
+export const physicalArtworkTypes = {
+  painting: {
+    name: "Painting",
+    metadata: z.object({
+      width: z.number().min(0).describe("Width in centimeters"),
+      height: z.number().min(0).describe("Height in centimeters"),
+      depth: z.number().min(0).describe("Depth in centimeters"),
+      weight: z.number().min(0).describe("Weight in kilograms"),
+      medium: z.string().describe("Painting medium (e.g., oil, acrylic)"),
+      surface: z.string().describe("Surface material (e.g., canvas, wood panel)"),
+    }),
+  },
+  sculpture: {
+    name: "Sculpture",
+    metadata: z.object({
+      width: z.number().min(0).describe("Width in centimeters"),
+      height: z.number().min(0).describe("Height in centimeters"),
+      depth: z.number().min(0).describe("Depth in centimeters"),
+      weight: z.number().min(0).describe("Weight in kilograms"),
+      material: z.string().describe("Primary material (e.g., bronze, marble)"),
+      technique: z.string().describe("Creation technique"),
+      baseIncluded: z.boolean().describe("Whether the sculpture includes a base"),
+    }),
+  },
+} as const;
+
+export type ArtworkType = keyof typeof physicalArtworkTypes;
+
+// Database schemas
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
@@ -20,9 +50,11 @@ export const artworks = pgTable("artworks", {
   userId: integer("user_id").notNull(),
   mintedNftId: integer("minted_nft_id"),
   hasPhysicalAsset: boolean("has_physical_asset").default(false),
-  physicalAssetDetails: text("physical_asset_details"),
+  artworkType: text("artwork_type"),
+  physicalAssetDetails: json("physical_asset_details"),
   price: decimal("price", { precision: 18, scale: 8 }),
   createdAt: timestamp("created_at").defaultNow(),
+  voteCount: integer("vote_count").default(0),
 });
 
 export const nfts = pgTable("nfts", {
@@ -51,11 +83,14 @@ export const proposals = pgTable("proposals", {
   title: text("title").notNull(),
   description: text("description").notNull(),
   creatorId: integer("creator_id").notNull(),
-  status: text("status").notNull(), // active, passed, rejected
+  status: text("status", { enum: ["active", "passed", "rejected"] }).notNull(),
   votesFor: decimal("votes_for", { precision: 18, scale: 8 }).default("0"),
   votesAgainst: decimal("votes_against", { precision: 18, scale: 8 }).default("0"),
-  createdAt: timestamp("created_at").defaultNow(),
+  startTime: timestamp("start_time").notNull(),
   endTime: timestamp("end_time").notNull(),
+  minVotingPower: decimal("min_voting_power", { precision: 18, scale: 8 }).notNull(),
+  eligibleTokens: text("eligible_tokens").array().notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
@@ -64,15 +99,12 @@ export const insertUserSchema = createInsertSchema(users).pick({
   walletAddress: true,
 });
 
-export const insertArtworkSchema = createInsertSchema(artworks).pick({
-  title: true,
-  description: true,
-  imageUrl: true,
-  artist: true,
-  userId: true,
-  hasPhysicalAsset: true,
-  physicalAssetDetails: true,
-  price: true,
+export const insertArtworkSchema = createInsertSchema(artworks).extend({
+  artworkType: z.enum(['painting', 'sculpture']).optional(),
+  physicalAssetDetails: z.union([
+    physicalArtworkTypes.painting.metadata,
+    physicalArtworkTypes.sculpture.metadata,
+  ]).optional(),
 });
 
 export const insertNftSchema = createInsertSchema(nfts).pick({
@@ -92,7 +124,10 @@ export const insertProposalSchema = createInsertSchema(proposals).pick({
   title: true,
   description: true,
   creatorId: true,
+  startTime: true,
   endTime: true,
+  minVotingPower: true,
+  eligibleTokens: true,
 });
 
 export type User = typeof users.$inferSelect;

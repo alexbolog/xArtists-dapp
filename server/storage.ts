@@ -11,15 +11,21 @@ interface Proposal {
   status: "active" | "passed" | "rejected";
   votesFor: string;
   votesAgainst: string;
-  createdAt: Date;
+  startTime: Date;
   endTime: Date;
+  minVotingPower: string;
+  eligibleTokens: string[];
+  createdAt: Date;
 }
 
 interface InsertProposal {
   title: string;
   description: string;
   creatorId: number;
+  startTime: Date;
   endTime: Date;
+  minVotingPower: string;
+  eligibleTokens: string[];
 }
 
 export interface IStorage {
@@ -218,6 +224,74 @@ export class MemStorage implements IStorage {
       walletAddress: "0x123...abc"
     });
 
+    // Add sample NFTs data first
+    const sampleNfts = [
+      {
+        tokenId: "1",
+        artworkId: 1,
+        ownerId: 1,
+        metadata: { 
+          name: "Abstract Harmony NFT", 
+          description: "First NFT in the collection",
+          quantity: 1,
+          type: "NFT"
+        },
+        isStaked: true,
+        stakedAt: new Date(),
+        voteCount: 125,
+        stakingYield: "10.5"
+      },
+      {
+        tokenId: "2",
+        artworkId: 2,
+        ownerId: 1,
+        metadata: { 
+          name: "Digital Dreams NFT", 
+          description: "Second NFT in the collection",
+          quantity: 5,
+          type: "SFT"
+        },
+        isStaked: false,
+        stakedAt: null,
+        voteCount: 89,
+        stakingYield: "8.2"
+      },
+      {
+        tokenId: "3",
+        artworkId: 3,
+        ownerId: 1,
+        metadata: { 
+          name: "Bronze Guardian NFT", 
+          description: "Third NFT in the collection",
+          quantity: 1,
+          type: "NFT"
+        },
+        isStaked: true,
+        stakedAt: new Date(),
+        voteCount: 45,
+        stakingYield: "15.7"
+      },
+      {
+        tokenId: "4",
+        artworkId: 4,
+        ownerId: 1,
+        metadata: { 
+          name: "Sunset Reflections NFT", 
+          description: "Fourth NFT in the collection",
+          quantity: 3,
+          type: "SFT"
+        },
+        isStaked: false,
+        stakedAt: null,
+        voteCount: 67,
+        stakingYield: "12.3"
+      }
+    ];
+
+    // Create NFTs first
+    sampleNfts.forEach(nft => this.createNFT(nft));
+
+    // Then create artworks
     const sampleArtworks = [
       {
         title: "Abstract Harmony",
@@ -226,8 +300,17 @@ export class MemStorage implements IStorage {
         artist: "John Artist",
         userId: 1,
         hasPhysicalAsset: true,
-        physicalAssetDetails: "Original canvas painting, 24x36 inches",
-        price: "0.5"
+        artworkType: "painting",
+        physicalAssetDetails: {
+          width: 60,
+          height: 90,
+          depth: 4,
+          weight: 2.5,
+          medium: "Oil",
+          surface: "Canvas"
+        },
+        price: "0.5",
+        voteCount: 125
       },
       {
         title: "Digital Dreams",
@@ -236,12 +319,53 @@ export class MemStorage implements IStorage {
         artist: "Jane Creator",
         userId: 1,
         hasPhysicalAsset: false,
-        price: "0.3"
+        price: "0.3",
+        voteCount: 89
+      },
+      {
+        title: "Bronze Guardian",
+        description: "A majestic sculpture capturing movement and strength",
+        imageUrl: "https://images.unsplash.com/photo-1737309150415-eaa7564b9e07",
+        artist: "Michael Sculptor",
+        userId: 1,
+        hasPhysicalAsset: true,
+        artworkType: "sculpture",
+        physicalAssetDetails: {
+          width: 40,
+          height: 120,
+          depth: 40,
+          weight: 15.5,
+          material: "Bronze",
+          technique: "Lost-wax casting",
+          baseIncluded: true
+        },
+        price: "2.5",
+        voteCount: 45
+      },
+      {
+        title: "Sunset Reflections",
+        description: "A peaceful landscape capturing the golden hour",
+        imageUrl: "https://images.unsplash.com/photo-1734623044339-e8d370c1a0e1",
+        artist: "Maria Painter",
+        userId: 1,
+        hasPhysicalAsset: true,
+        artworkType: "painting",
+        physicalAssetDetails: {
+          width: 80,
+          height: 60,
+          depth: 3,
+          weight: 1.8,
+          medium: "Acrylic",
+          surface: "Wood Panel"
+        },
+        price: null,
+        voteCount: 67
       }
     ];
 
     sampleArtworks.forEach(artwork => this.createArtwork(artwork));
 
+    // Add sample proposals
     const now = new Date();
     const futureDate = new Date();
     futureDate.setDate(now.getDate() + 7);
@@ -257,8 +381,11 @@ export class MemStorage implements IStorage {
         status: "active",
         votesFor: "1500.00",
         votesAgainst: "1000.00",
-        createdAt: now,
-        endTime: futureDate
+        startTime: now,
+        endTime: futureDate,
+        minVotingPower: "100.00",
+        eligibleTokens: ["gov", "stake"],
+        createdAt: now
       },
       {
         id: 2,
@@ -268,8 +395,11 @@ export class MemStorage implements IStorage {
         status: "passed",
         votesFor: "2500.00",
         votesAgainst: "500.00",
-        createdAt: pastDate,
-        endTime: now
+        startTime: pastDate,
+        endTime: now,
+        minVotingPower: "50.00",
+        eligibleTokens: ["gov"],
+        createdAt: pastDate
       },
       {
         id: 3,
@@ -279,8 +409,11 @@ export class MemStorage implements IStorage {
         status: "rejected",
         votesFor: "800.00",
         votesAgainst: "2200.00",
-        createdAt: pastDate,
-        endTime: now
+        startTime: pastDate,
+        endTime: now,
+        minVotingPower: "200.00",
+        eligibleTokens: ["gov", "art"],
+        createdAt: pastDate
       }
     ];
 

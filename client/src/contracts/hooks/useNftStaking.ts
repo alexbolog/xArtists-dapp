@@ -2,15 +2,17 @@ import useContract from "./useContract";
 import abi from "../abis/nft-staking.abi.json";
 import { AbiRegistry, Address, TokenTransfer } from "@multiversx/sdk-core/out";
 import { BigNumber } from "bignumber.js";
+import { getContractAddress } from "../config";
 
 const DEFAULT_GAS_LIMIT = 25_000_000;
 
 const useNftStaking = () => {
+  const CONTRACT_ADDRESS_KEY = "NFT_STAKING";
   const { create, handleQueryContract, handleSendTransaction } = useContract();
 
   // Utility functions
   const getNftStakingContract = () => {
-    const address = getContractAddress("NFT_STAKING");
+    const address = getContractAddress(CONTRACT_ADDRESS_KEY);
     const abiRegistry = AbiRegistry.create(abi);
     return create(abiRegistry, Address.fromBech32(address));
   };

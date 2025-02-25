@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
-import { insertArtworkSchema } from "@shared/schema";
+import { insertArtworkSchema, physicalArtworkTypes, ArtworkType } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -17,13 +17,23 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Card } from "@/components/ui/card";
-import { Upload, Image } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Upload, Image, Sparkles } from "lucide-react";
 
 export default function Create() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [hasPhysicalAsset, setHasPhysicalAsset] = useState(false);
+  const [showAiAnalysis, setShowAiAnalysis] = useState(false);
 
   const form = useForm({
     resolver: zodResolver(insertArtworkSchema),
@@ -33,6 +43,9 @@ export default function Create() {
       artist: "",
       imageUrl: "",
       userId: 1, // Using demo user ID for now
+      hasPhysicalAsset: false,
+      artworkType: undefined,
+      physicalAssetDetails: undefined,
     },
   });
 
@@ -42,6 +55,7 @@ export default function Create() {
       return res.json();
     },
     onSuccess: () => {
+      setShowAiAnalysis(true); // Show AI analysis on successful creation
       toast({
         title: "Success",
         description: "Artwork uploaded and ready for minting",
@@ -72,6 +86,22 @@ export default function Create() {
       form.setValue("imageUrl", randomUrl);
     }
   };
+
+  const togglePhysicalAsset = (checked: boolean) => {
+    setHasPhysicalAsset(checked);
+    form.setValue("hasPhysicalAsset", checked);
+    if (!checked) {
+      form.setValue("artworkType", undefined);
+      form.setValue("physicalAssetDetails", undefined);
+    }
+  };
+
+  const handleArtworkTypeChange = (type: ArtworkType) => {
+    form.setValue("artworkType", type);
+    form.setValue("physicalAssetDetails", undefined);
+  };
+
+  const selectedType = form.watch("artworkType");
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -121,6 +151,19 @@ export default function Create() {
               )}
             </div>
 
+            <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
+              <div className="space-y-0.5">
+                <h2 className="text-lg font-medium">Physical Artwork</h2>
+                <p className="text-sm text-muted-foreground">
+                  Enable if this NFT represents a physical piece of art
+                </p>
+              </div>
+              <Switch
+                checked={hasPhysicalAsset}
+                onCheckedChange={togglePhysicalAsset}
+              />
+            </div>
+
             <FormField
               control={form.control}
               name="title"
@@ -167,6 +210,70 @@ export default function Create() {
               )}
             />
 
+            {hasPhysicalAsset && (
+              <>
+                <FormField
+                  control={form.control}
+                  name="artworkType"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Artwork Type</FormLabel>
+                      <Select
+                        onValueChange={handleArtworkTypeChange}
+                        value={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select artwork type" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {Object.entries(physicalArtworkTypes).map(([value, type]) => (
+                            <SelectItem key={value} value={value}>
+                              {type.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {selectedType && (
+                  <div className="space-y-4 border rounded-lg p-4 bg-muted/50">
+                    <h3 className="font-medium">Physical Details</h3>
+                    {Object.entries(physicalArtworkTypes[selectedType].metadata.shape).map(([key, value]) => (
+                      <FormField
+                        key={key}
+                        control={form.control}
+                        name={`physicalAssetDetails.${key}`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>{value.description}</FormLabel>
+                            <FormControl>
+                              <Input
+                                type={value.typeName === "number" ? "number" : "text"}
+                                placeholder={value.description}
+                                {...field}
+                                onChange={(e) => {
+                                  const val = value.typeName === "number"
+                                    ? parseFloat(e.target.value)
+                                    : e.target.value;
+                                  field.onChange(val);
+                                }}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+
             <Button
               type="submit"
               className="w-full"
@@ -186,6 +293,33 @@ export default function Create() {
             </Button>
           </form>
         </Form>
+
+        {showAiAnalysis && (
+          <div className="mt-8 p-6 rounded-lg bg-purple-500/10 border border-purple-500/20">
+            <div className="flex items-center gap-2 mb-4">
+              <Sparkles className="h-5 w-5 text-purple-500" />
+              <h3 className="text-lg font-semibold text-purple-500">AI Analysis</h3>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <h4 className="text-sm font-medium text-purple-500/80 mb-1">Style Recognition</h4>
+                <p className="text-sm">Contemporary abstract expressionism with influences from digital art movements</p>
+              </div>
+              <div>
+                <h4 className="text-sm font-medium text-purple-500/80 mb-1">Color Palette</h4>
+                <p className="text-sm">Dominated by vibrant blues and warm earth tones, creating a balanced composition</p>
+              </div>
+              <div>
+                <h4 className="text-sm font-medium text-purple-500/80 mb-1">Composition Analysis</h4>
+                <p className="text-sm">Strong diagonal elements with a central focal point, following the rule of thirds</p>
+              </div>
+              <div>
+                <h4 className="text-sm font-medium text-purple-500/80 mb-1">Unique Features</h4>
+                <p className="text-sm">Distinctive brushwork technique and innovative use of negative space</p>
+              </div>
+            </div>
+          </div>
+        )}
       </Card>
     </div>
   );
