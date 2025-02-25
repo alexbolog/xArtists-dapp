@@ -41,7 +41,7 @@ const NAV_ITEMS = [
   { href: "/create", icon: <Image className="h-4 w-4" />, label: "Create NFT" },
   { href: "/stake", icon: <Coins className="h-4 w-4" />, label: "Stake" },
   { href: "/governance", icon: <LightbulbIcon className="h-4 w-4" />, label: "Governance" },
-  { href: "/profile", icon: <UserCircle className="h-4 w-4" />, label: "Profile" },
+  // { href: "/profile", icon: <UserCircle className="h-4 w-4" />, label: "Profile" },
 ];
 
 export default function Layout({ children }: { children: React.ReactNode }) {

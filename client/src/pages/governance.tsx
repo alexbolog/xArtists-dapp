@@ -17,6 +17,7 @@ import CreateProposalModal from "@/components/create-proposal-modal";
 import useTroStaking from "@/contracts/hooks/useTroStaking";
 import { useGetAccountInfo } from "@multiversx/sdk-dapp/hooks";
 import { Proposal, ProposalContext, ProposalStatus } from "@/contracts/types";
+import { ADMIN_ADDRESS } from "@/contracts/config";
 
 function ProposalCard({ proposal }: { proposal: ProposalContext }) {
   console.log("proposalContext", proposal);
@@ -230,10 +231,12 @@ export default function Governance() {
             Vote on proposals and shape the future of the platform
           </p>
         </div>
-        <Button className="gap-2" onClick={() => setCreateModalOpen(true)}>
-          <PlusCircle className="h-4 w-4" />
-          Create Proposal
-        </Button>
+        {ADMIN_ADDRESS === address && (
+          <Button className="gap-2" onClick={() => setCreateModalOpen(true)}>
+            <PlusCircle className="h-4 w-4" />
+            Create Proposal
+          </Button>
+        )}
       </div>
 
       <CreateProposalModal
@@ -282,12 +285,14 @@ export default function Governance() {
           {!proposals?.length && (
             <Card>
               <CardContent className="p-8 text-center">
-                <p className="text-muted-foreground mb-4">
+                <p className="text-muted-foreground">
                   No active proposals at the moment
                 </p>
-                <Button onClick={() => setCreateModalOpen(true)}>
-                  Create the First Proposal
-                </Button>
+                {ADMIN_ADDRESS === address && (
+                  <Button onClick={() => setCreateModalOpen(true)} className="mt-4">
+                    Create the First Proposal
+                  </Button>
+                )}
               </CardContent>
             </Card>
           )}

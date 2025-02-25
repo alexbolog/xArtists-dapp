@@ -15,3 +15,6 @@ const getChainId = (): string => {
 };
 
 export { getContractAddress, getProviderUrl, getChainId, getApiUrl };
+
+export const ADMIN_ADDRESS =
+  "erd1ktuw64p5xhh07q573y7683929hvdp94a00w069rddlw4apvayj7sywtc5m";

@@ -499,7 +499,11 @@ export default function StakePage() {
             <div className="mt-2">
               <Progress value={userStakePercentage} className="h-2" />
               <p className="text-xs text-muted-foreground mt-1">
-                {userStakePercentage.toFixed(2)}% of total stake power
+                {(Number.isNaN(userStakePercentage)
+                  ? 0
+                  : userStakePercentage
+                ).toFixed(2)}
+                % of total stake power
               </p>
             </div>
           </CardContent>
