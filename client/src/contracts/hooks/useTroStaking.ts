@@ -89,9 +89,10 @@ const useTroStaking = () => {
   };
 
   const getFullProposalContext = async (
-    user: string
+    userArg: string
   ): Promise<Array<FullProposalContext>> => {
     const contract = getTroStakingContract();
+    const user = Address.isValid(userArg) ? userArg : Address.Zero().toString();
     const interaction = contract.methods.getAllProposals([
       Address.fromBech32(user),
     ]);
