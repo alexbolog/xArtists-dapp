@@ -4,6 +4,7 @@ import {
   AbiRegistry,
   ProxyNetworkProvider,
   Interaction,
+  ResultsParser,
 } from "@multiversx/sdk-core/out";
 import { useGetNetworkConfig } from "@multiversx/sdk-dapp/hooks";
 import { getProviderUrl } from "../config";
@@ -22,9 +23,11 @@ const useContract = () => {
     return new ProxyNetworkProvider(getProviderUrl());
   };
 
-  const handleQueryContract = async (interaction: Interaction) => {
+  const handleQueryContract = async <T>(interaction: Interaction): Promise<T> => {
     const provider = getProvider();
-    return provider.queryContract(interaction.check().buildQuery());
+    const result = await provider.queryContract(interaction.check().buildQuery());
+    const data = new ResultsParser().parseQueryResponse(result, interaction.getEndpoint());
+    return data as T;
   };
 
   const handleSendTransaction = async (interaction: Interaction) => {

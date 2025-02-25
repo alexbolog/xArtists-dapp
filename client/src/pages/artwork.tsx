@@ -64,7 +64,7 @@ export default function ArtworkPage() {
               className="gap-2 bg-green-500 hover:bg-green-600"
             >
               <ShoppingCart className="h-5 w-5" />
-              Buy for {saleInfo.price} ETH
+              Buy for {saleInfo.price} TRO
             </Button>
           ) : (
             <Button 
@@ -123,7 +123,7 @@ export default function ArtworkPage() {
             {!saleInfo.isForSale && (
               <div>
                 <p className="text-sm text-muted-foreground">Last Sold For</p>
-                <p className="font-medium">{saleInfo.lastSoldPrice} ETH</p>
+                <p className="font-medium">{saleInfo.lastSoldPrice} TRO</p>
               </div>
             )}
           </div>

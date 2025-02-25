@@ -99,7 +99,7 @@ export default function Gallery() {
                           </div>
                           <div className="p-4 flex items-center justify-between">
                             <div>
-                              <p className="text-lg font-semibold">{Number(artwork.price).toFixed(2)} ETH</p>
+                              <p className="text-lg font-semibold">{Number(artwork.price).toFixed(2)} TRO</p>
                               <p className="text-sm text-muted-foreground">Available for purchase</p>
                             </div>
                             <Button size="sm" className="gap-2">

@@ -15,7 +15,7 @@ export default function ArtworkCard({
   showActions = true,
 }: ArtworkCardProps) {
   const forSale = Boolean(artwork.price);
-  const priceDisplay = forSale ? `${artwork.price} ETH` : "0.3 ETH"; // Demo last sold price
+  const priceDisplay = forSale ? `${artwork.price} TRO` : "0.3 TRO"; // Demo last sold price
 
   return (
     <Card className="group relative overflow-hidden transition-all hover:shadow-lg">

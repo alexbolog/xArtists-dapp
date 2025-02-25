@@ -3,6 +3,15 @@ import abi from "../abis/tro-staking.abi.json";
 import { AbiRegistry, Address, TokenTransfer } from "@multiversx/sdk-core/out";
 import { BigNumber } from "bignumber.js";
 import { getContractAddress } from "../config";
+import {
+  EsdtTokenPayment,
+  Proposal,
+  ProposalContext,
+  ProposalStatus,
+  StakingContext,
+  VoteContext,
+  VoteDecision
+} from "../types";
 
 const DEFAULT_GAS_LIMIT = 25_000_000;
 
@@ -18,95 +27,95 @@ const useTroStaking = () => {
   };
 
   // Read functions
-  const getTroTokenIdentifier = async () => {
+  const getTroTokenIdentifier = async (): Promise<string> => {
     const contract = getTroStakingContract();
     const interaction = contract.methods.getTroTokenIdentifier();
-    return handleQueryContract(interaction);
+    return handleQueryContract<string>(interaction);
   };
 
-  const getWhitelistedLpTokenIdentifiers = async () => {
+  const getWhitelistedLpTokenIdentifiers = async (): Promise<string[]> => {
     const contract = getTroStakingContract();
     const interaction = contract.methods.getWhitelistedLpTokenIdentifiers();
-    return handleQueryContract(interaction);
+    return handleQueryContract<string[]>(interaction);
   };
 
-  const getUsersStake = async (usersAddress: string, tokenIdentifier: string) => {
+  const getUsersStake = async (usersAddress: string, tokenIdentifier: string): Promise<string> => {
     const contract = getTroStakingContract();
     const interaction = contract.methods.getUsersStake([
       Address.fromBech32(usersAddress),
       tokenIdentifier,
     ]);
-    return handleQueryContract(interaction);
+    return handleQueryContract<string>(interaction);
   };
 
-  const getLastProposalId = async () => {
+  const getLastProposalId = async (): Promise<number> => {
     const contract = getTroStakingContract();
     const interaction = contract.methods.getLastProposalId();
-    return handleQueryContract(interaction);
+    return handleQueryContract<number>(interaction);
   };
 
-  const getProposal = async (proposalId: number) => {
+  const getProposal = async (proposalId: number): Promise<Proposal> => {
     const contract = getTroStakingContract();
     const interaction = contract.methods.getProposal([proposalId]);
-    return handleQueryContract(interaction);
+    return handleQueryContract<Proposal>(interaction);
   };
 
-  const getProposalVotes = async (proposalId: number, decision: string) => {
+  const getProposalVotes = async (proposalId: number, decision: VoteDecision): Promise<string> => {
     const contract = getTroStakingContract();
     const interaction = contract.methods.getProposalVotes([proposalId, decision]);
-    return handleQueryContract(interaction);
+    return handleQueryContract<string>(interaction);
   };
 
-  const getUserVote = async (user: string, proposalId: number) => {
+  const getUserVote = async (user: string, proposalId: number): Promise<VoteContext> => {
     const contract = getTroStakingContract();
     const interaction = contract.methods.getUserVote([
       Address.fromBech32(user),
       proposalId,
     ]);
-    return handleQueryContract(interaction);
+    return handleQueryContract<VoteContext>(interaction);
   };
 
-  const getLpToTroRatio = async (proposalId: number, lpToken: string) => {
+  const getLpToTroRatio = async (proposalId: number, lpToken: string): Promise<string> => {
     const contract = getTroStakingContract();
     const interaction = contract.methods.getLpToTroRatio([proposalId, lpToken]);
-    return handleQueryContract(interaction);
+    return handleQueryContract<string>(interaction);
   };
 
-  const getVotingPower = async (user: string, proposalId?: number) => {
+  const getVotingPower = async (user: string, proposalId?: number): Promise<string> => {
     const contract = getTroStakingContract();
     const interaction = contract.methods.getVotingPower([
       Address.fromBech32(user),
       proposalId,
     ]);
-    return handleQueryContract(interaction);
+    return handleQueryContract<string>(interaction);
   };
 
-  const getStakingContext = async (user?: string) => {
+  const getStakingContext = async (user?: string): Promise<StakingContext | null> => {
     const contract = getTroStakingContract();
     const interaction = contract.methods.getStakingContext([
       user ? Address.fromBech32(user) : undefined,
     ]);
-    return handleQueryContract(interaction);
+    return handleQueryContract<StakingContext | null>(interaction);
   };
 
-  const getUserCompleteStake = async (user: string) => {
+  const getUserCompleteStake = async (user: string): Promise<EsdtTokenPayment[]> => {
     const contract = getTroStakingContract();
     const interaction = contract.methods.getUserCompleteStake([
       Address.fromBech32(user),
     ]);
-    return handleQueryContract(interaction);
+    return handleQueryContract<EsdtTokenPayment[]>(interaction);
   };
 
-  const getActiveProposalIds = async () => {
+  const getActiveProposalIds = async (): Promise<number[]> => {
     const contract = getTroStakingContract();
     const interaction = contract.methods.getActiveProposalIds();
-    return handleQueryContract(interaction);
+    return handleQueryContract<number[]>(interaction);
   };
 
-  const getProposalStatus = async (proposalId: number) => {
+  const getProposalStatus = async (proposalId: number): Promise<ProposalStatus> => {
     const contract = getTroStakingContract();
     const interaction = contract.methods.getProposalStatus([proposalId]);
-    return handleQueryContract(interaction);
+    return handleQueryContract<ProposalStatus>(interaction);
   };
 
   // Write functions
@@ -131,7 +140,7 @@ const useTroStaking = () => {
     return handleSendTransaction(interaction);
   };
 
-  const vote = async (proposalId: number, decision: string) => {
+  const vote = async (proposalId: number, decision: VoteDecision) => {
     const contract = getTroStakingContract();
     const interaction = contract.methods
       .vote([proposalId, decision])

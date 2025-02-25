@@ -1,9 +1,17 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { QueryFunction, useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Coins, Wallet, Trophy, ArrowUpFromLine, ChevronDown, Plus, Minus } from "lucide-react";
+import {
+  Coins,
+  Wallet,
+  Trophy,
+  ArrowUpFromLine,
+  ChevronDown,
+  Plus,
+  Minus,
+} from "lucide-react";
 import {
   Collapsible,
   CollapsibleContent,
@@ -12,6 +20,9 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import type { NFT } from "@shared/schema";
+import { useGetAccountInfo, useGetLoginInfo } from "@multiversx/sdk-dapp/hooks";
+import useNftStaking from "@/contracts/hooks/useNftStaking";
+import BigNumber from "bignumber.js";
 
 // Mock data - in production these would come from the API
 const TOTAL_STAKE_POWER = 100000;
@@ -27,43 +38,104 @@ interface SelectedQuantity {
   [tokenId: string]: number;
 }
 
+export const getStakingStats: QueryFunction<StakingStats> = async () => {
+  // const response = await fetch("https://your-api-endpoint/staking-stats");
+  // if (!response.ok) throw new Error("Failed to fetch staking stats");
+  // return response.json();
+  return {
+    totalStaked: 15,
+    pendingRewards: "2211.5",
+    stakePower: 75000,
+  };
+};
+
 export default function StakePage() {
   const [walletOpen, setWalletOpen] = useState(false);
   const [selectedStaked, setSelectedStaked] = useState<Set<string>>(new Set());
   const [selectedWallet, setSelectedWallet] = useState<Set<string>>(new Set());
-  const [stakedQuantities, setStakedQuantities] = useState<SelectedQuantity>({});
-  const [walletQuantities, setWalletQuantities] = useState<SelectedQuantity>({});
+  const [stakedQuantities, setStakedQuantities] = useState<SelectedQuantity>(
+    {}
+  );
+  const [walletQuantities, setWalletQuantities] = useState<SelectedQuantity>(
+    {}
+  );
+
+  const { address } = useGetAccountInfo();
+  const { isLoggedIn } = useGetLoginInfo();
+  const { getStakingInfo } = useNftStaking();
 
   const { data: userNfts, isLoading: nftsLoading } = useQuery<NFT[]>({
     queryKey: ["/api/users/1/nfts"], // Using demo user ID
   });
 
-  const { data: stakingStats, isLoading: statsLoading } = useQuery<StakingStats>({
-    queryKey: ["/api/users/1/staking"],
-    initialData: {
-      totalStaked: 5,
-      pendingRewards: "1.5",
-      stakePower: 7500,
+  const {
+    data: stakingStats,
+    isLoading: statsLoading,
+  } = useQuery<StakingStats>({
+    queryKey: ["stakingStats", { userId: address }],
+    queryFn: async () => {
+      if (!isLoggedIn) {
+        return {
+          totalStaked: 0,
+          pendingRewards: "0",
+          stakePower: 0,
+        };
+      }
+
+      try {
+        const stakingInfo = await getStakingInfo(address);
+        return {
+          totalStaked: stakingInfo.staked_items.length,
+          pendingRewards: stakingInfo.pending_rewards
+            .reduce(
+              (acc, reward) => acc.plus(BigNumber(reward.amount).shiftedBy(-18)),
+              BigNumber(0)
+            )
+            .toString(),
+          stakePower: Number(stakingInfo.staked_score),
+        };
+      } catch (error) {
+        throw new Error(
+          error instanceof Error
+            ? error.message
+            : "Failed to fetch staking info"
+        );
+      }
     },
   });
 
-  const stakedNfts = userNfts?.filter(nft => nft.isStaked) || [];
-  const walletNfts = userNfts?.filter(nft => !nft.isStaked) || [];
+  const stakedNfts = userNfts?.filter((nft) => nft.isStaked) || [];
+  const walletNfts = userNfts?.filter((nft) => !nft.isStaked) || [];
 
-  const calculateSelectedSum = (nfts: NFT[], selected: Set<string>, quantities: SelectedQuantity) => {
+  const calculateSelectedSum = (
+    nfts: NFT[],
+    selected: Set<string>,
+    quantities: SelectedQuantity
+  ) => {
     return nfts
-      .filter(nft => selected.has(nft.tokenId))
+      .filter((nft) => selected.has(nft.tokenId))
       .reduce((sum, nft) => {
         const quantity = quantities[nft.tokenId] || 1;
         const isSFT = nft.metadata?.type === "SFT";
         const effectiveQuantity = isSFT ? quantity : 1;
-        const yieldValue = typeof nft.stakingYield === 'string' ? parseFloat(nft.stakingYield) : nft.stakingYield || 0;
-        return sum + (yieldValue * effectiveQuantity);
+        const yieldValue =
+          typeof nft.stakingYield === "string"
+            ? parseFloat(nft.stakingYield)
+            : nft.stakingYield || 0;
+        return sum + yieldValue * effectiveQuantity;
       }, 0);
   };
 
-  const stakedSum = calculateSelectedSum(stakedNfts, selectedStaked, stakedQuantities);
-  const walletSum = calculateSelectedSum(walletNfts, selectedWallet, walletQuantities);
+  const stakedSum = calculateSelectedSum(
+    stakedNfts,
+    selectedStaked,
+    stakedQuantities
+  );
+  const walletSum = calculateSelectedSum(
+    walletNfts,
+    selectedWallet,
+    walletQuantities
+  );
 
   const handleQuantityChange = (
     tokenId: string,
@@ -100,7 +172,7 @@ export default function StakePage() {
 
   const renderNFTCard = (nft: NFT, isStaked: boolean) => {
     const isSFT = nft.metadata?.type === "SFT";
-    const maxQuantity = isSFT ? (nft.metadata?.quantity || 1) : 1;
+    const maxQuantity = isSFT ? nft.metadata?.quantity || 1 : 1;
     const quantities = isStaked ? stakedQuantities : walletQuantities;
     const selected = isStaked ? selectedStaked : selectedWallet;
     const currentQuantity = quantities[nft.tokenId] || 0;
@@ -119,9 +191,15 @@ export default function StakePage() {
                 newSelected.add(nft.tokenId);
                 if (isSFT) {
                   if (isStaked) {
-                    setStakedQuantities({ ...stakedQuantities, [nft.tokenId]: 1 });
+                    setStakedQuantities({
+                      ...stakedQuantities,
+                      [nft.tokenId]: 1,
+                    });
                   } else {
-                    setWalletQuantities({ ...walletQuantities, [nft.tokenId]: 1 });
+                    setWalletQuantities({
+                      ...walletQuantities,
+                      [nft.tokenId]: 1,
+                    });
                   }
                 }
                 if (isStaked) {
@@ -153,20 +231,26 @@ export default function StakePage() {
               className="w-12 h-12 md:w-16 md:h-16 rounded-lg object-cover"
             />
             {isSFT && (
-              <Badge
-                className="absolute -top-2 -right-2 bg-primary text-xs"
-              >
+              <Badge className="absolute -top-2 -right-2 bg-primary text-xs">
                 x{maxQuantity}
               </Badge>
             )}
           </div>
           <div>
-            <h3 className="font-semibold text-sm md:text-base">Token #{nft.tokenId}</h3>
+            <h3 className="font-semibold text-sm md:text-base">
+              Token #{nft.tokenId}
+            </h3>
             <div className="flex flex-wrap gap-1 md:gap-2 items-center mt-1">
-              <Badge variant="outline" className="text-yellow-500 border-yellow-500/20 text-xs">
+              <Badge
+                variant="outline"
+                className="text-yellow-500 border-yellow-500/20 text-xs"
+              >
                 {parseFloat(nft.stakingYield || "0").toFixed(1)} Power
               </Badge>
-              <Badge variant="outline" className="text-purple-500 border-purple-500/20 text-xs">
+              <Badge
+                variant="outline"
+                className="text-purple-500 border-purple-500/20 text-xs"
+              >
                 {nft.metadata?.type}
               </Badge>
             </div>
@@ -178,17 +262,23 @@ export default function StakePage() {
               variant="outline"
               size="icon"
               className="h-6 w-6 md:h-8 md:w-8"
-              onClick={() => handleQuantityChange(nft.tokenId, -1, maxQuantity, isStaked)}
+              onClick={() =>
+                handleQuantityChange(nft.tokenId, -1, maxQuantity, isStaked)
+              }
               disabled={currentQuantity <= 1}
             >
               <Minus className="h-3 w-3 md:h-4 md:w-4" />
             </Button>
-            <span className="w-6 md:w-8 text-center text-sm">{currentQuantity}</span>
+            <span className="w-6 md:w-8 text-center text-sm">
+              {currentQuantity}
+            </span>
             <Button
               variant="outline"
               size="icon"
               className="h-6 w-6 md:h-8 md:w-8"
-              onClick={() => handleQuantityChange(nft.tokenId, 1, maxQuantity, isStaked)}
+              onClick={() =>
+                handleQuantityChange(nft.tokenId, 1, maxQuantity, isStaked)
+              }
               disabled={currentQuantity >= maxQuantity}
             >
               <Plus className="h-3 w-3 md:h-4 md:w-4" />
@@ -208,7 +298,8 @@ export default function StakePage() {
     );
   }
 
-  const userStakePercentage = (stakingStats?.stakePower || 0) / TOTAL_STAKE_POWER * 100;
+  const userStakePercentage =
+    ((stakingStats?.stakePower || 0) / TOTAL_STAKE_POWER) * 100;
 
   return (
     <div className="space-y-4 md:space-y-8">
@@ -216,11 +307,15 @@ export default function StakePage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Staked NFTs</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Total Staked NFTs
+            </CardTitle>
             <Trophy className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stakingStats?.totalStaked}</div>
+            <div className="text-2xl font-bold">
+              {stakingStats?.totalStaked}
+            </div>
             <p className="text-xs text-muted-foreground">
               Stake more NFTs to earn higher rewards
             </p>
@@ -229,11 +324,15 @@ export default function StakePage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Your Stake Power</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Your Stake Power
+            </CardTitle>
             <Wallet className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stakingStats?.stakePower.toLocaleString()}</div>
+            <div className="text-2xl font-bold">
+              {stakingStats?.stakePower.toLocaleString()}
+            </div>
             <div className="mt-2">
               <Progress value={userStakePercentage} className="h-2" />
               <p className="text-xs text-muted-foreground mt-1">
@@ -245,11 +344,15 @@ export default function StakePage() {
 
         <Card className="sm:col-span-2 lg:col-span-1">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending Rewards</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Pending Rewards
+            </CardTitle>
             <Coins className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stakingStats?.pendingRewards} ETH</div>
+            <div className="text-2xl font-bold">
+              {stakingStats?.pendingRewards} TRO
+            </div>
             <Button
               size="sm"
               className="mt-2 w-full bg-green-500 hover:bg-green-600"
@@ -271,9 +374,11 @@ export default function StakePage() {
                 variant="outline"
                 size="sm"
                 onClick={() => {
-                  setSelectedStaked(new Set(stakedNfts.map(nft => nft.tokenId)));
+                  setSelectedStaked(
+                    new Set(stakedNfts.map((nft) => nft.tokenId))
+                  );
                   const newQuantities = {};
-                  stakedNfts.forEach(nft => {
+                  stakedNfts.forEach((nft) => {
                     if (nft.metadata?.type === "SFT") {
                       newQuantities[nft.tokenId] = nft.metadata?.quantity || 1;
                     }
@@ -298,12 +403,13 @@ export default function StakePage() {
             {stakedNfts.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 <Wallet className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>No NFTs staked yet. Add some NFTs from your wallet to start earning rewards.</p>
+                <p>
+                  No NFTs staked yet. Add some NFTs from your wallet to start
+                  earning rewards.
+                </p>
               </div>
             ) : (
-              stakedNfts.map((nft) => (
-                renderNFTCard(nft, true)
-              ))
+              stakedNfts.map((nft) => renderNFTCard(nft, true))
             )}
           </div>
         </CardContent>
@@ -324,9 +430,11 @@ export default function StakePage() {
                         size="sm"
                         onClick={(e) => {
                           e.stopPropagation();
-                          setSelectedWallet(new Set(walletNfts.map(nft => nft.tokenId)));
+                          setSelectedWallet(
+                            new Set(walletNfts.map((nft) => nft.tokenId))
+                          );
                           const newQuantities = {};
-                          walletNfts.forEach(nft => {
+                          walletNfts.forEach((nft) => {
                             if (nft.metadata?.type === "SFT") {
                               newQuantities[nft.tokenId] = 1;
                             }
@@ -349,7 +457,11 @@ export default function StakePage() {
                       )}
                     </div>
                   )}
-                  <ChevronDown className={`h-4 w-4 transition-transform ${walletOpen ? 'rotate-180' : ''}`} />
+                  <ChevronDown
+                    className={`h-4 w-4 transition-transform ${
+                      walletOpen ? "rotate-180" : ""
+                    }`}
+                  />
                 </div>
               </div>
             </CollapsibleTrigger>
@@ -361,9 +473,11 @@ export default function StakePage() {
                   className="w-full"
                   onClick={(e) => {
                     e.stopPropagation();
-                    setSelectedWallet(new Set(walletNfts.map(nft => nft.tokenId)));
+                    setSelectedWallet(
+                      new Set(walletNfts.map((nft) => nft.tokenId))
+                    );
                     const newQuantities = {};
-                    walletNfts.forEach(nft => {
+                    walletNfts.forEach((nft) => {
                       if (nft.metadata?.type === "SFT") {
                         newQuantities[nft.tokenId] = 1;
                       }

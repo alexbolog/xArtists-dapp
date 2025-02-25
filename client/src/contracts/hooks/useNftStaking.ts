@@ -3,6 +3,7 @@ import abi from "../abis/nft-staking.abi.json";
 import { AbiRegistry, Address, TokenTransfer } from "@multiversx/sdk-core/out";
 import { BigNumber } from "bignumber.js";
 import { getContractAddress } from "../config";
+import { EsdtTokenPayment, StakingInfo } from "../types";
 
 const DEFAULT_GAS_LIMIT = 25_000_000;
 
@@ -44,7 +45,7 @@ const useNftStaking = () => {
     return handleQueryContract(interaction);
   };
 
-  const getStakedItemsRaw = async (address: string) => {
+  const getStakedItemsRaw = async (address: string): Promise<Array<[string, number]>> => {
     const contract = getNftStakingContract();
     const interaction = contract.methods.getStakedItemsRaw([
       Address.fromBech32(address),
@@ -73,7 +74,7 @@ const useNftStaking = () => {
     return handleQueryContract(interaction);
   };
 
-  const getUnstakingItemsRaw = async (address: string) => {
+  const getUnstakingItemsRaw = async (address: string): Promise<Array<[number, EsdtTokenPayment[]]>> => {
     const contract = getNftStakingContract();
     const interaction = contract.methods.getUnstakingItemsRaw([
       Address.fromBech32(address),
@@ -87,7 +88,7 @@ const useNftStaking = () => {
     return handleQueryContract(interaction);
   };
 
-  const getStakingInfo = async (address: string) => {
+  const getStakingInfo = async (address: string): Promise<StakingInfo> => {
     const contract = getNftStakingContract();
     const interaction = contract.methods.getStakingInfo([
       Address.fromBech32(address),
@@ -95,7 +96,7 @@ const useNftStaking = () => {
     return handleQueryContract(interaction);
   };
 
-  const getPendingRewards = async (address: string) => {
+  const getPendingRewards = async (address: string): Promise<EsdtTokenPayment[]> => {
     const contract = getNftStakingContract();
     const interaction = contract.methods.getPendingRewards([
       Address.fromBech32(address),
@@ -103,7 +104,7 @@ const useNftStaking = () => {
     return handleQueryContract(interaction);
   };
 
-  const getStakedItems = async (address: string) => {
+  const getStakedItems = async (address: string): Promise<EsdtTokenPayment[]> => {
     const contract = getNftStakingContract();
     const interaction = contract.methods.getStakedItems([
       Address.fromBech32(address),
@@ -139,7 +140,7 @@ const useNftStaking = () => {
 
   // Write functions
   const stakeNft = async (
-    payments: [{ token: string; nonce: number; amount: number }]
+    payments: Array<{ token: string; nonce: number; amount: number }>
   ) => {
     const contract = getNftStakingContract();
     const paymentsArg = payments.map(({ token, nonce, amount }) => {
@@ -154,7 +155,7 @@ const useNftStaking = () => {
   };
 
   const unstakeNft = async (
-    payments: [{ token: string; nonce: number; amount: number }]
+    payments: Array<{ token: string; nonce: number; amount: number }>
   ) => {
     const contract = getNftStakingContract();
     const paymentsArg = payments.map(({ token, nonce, amount }) => {
