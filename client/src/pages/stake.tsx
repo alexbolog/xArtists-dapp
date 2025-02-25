@@ -448,7 +448,7 @@ export default function StakePage() {
                           const newQuantities = {};
                           walletNfts.forEach((nft) => {
                             if (nft.type === "SemiFungibleESDT") {
-                              newQuantities[nft.identifier] = 1;
+                              newQuantities[nft.identifier] = parseInt(nft.balance) || 1;
                             }
                           });
                           setWalletQuantities(newQuantities);
