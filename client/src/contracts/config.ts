@@ -6,8 +6,12 @@ const getProviderUrl = (): string => {
   return import.meta.env.VITE_PROVIDER_URL || "";
 };
 
+const getApiUrl = (): string => {
+  return import.meta.env.VITE_API_URL || "";
+};
+
 const getChainId = (): string => {
   return import.meta.env.VITE_CHAIN_ID || "";
 };
 
-export { getContractAddress, getProviderUrl, getChainId };
+export { getContractAddress, getProviderUrl, getChainId, getApiUrl };

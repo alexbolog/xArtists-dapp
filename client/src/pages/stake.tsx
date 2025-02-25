@@ -23,6 +23,7 @@ import type { NFT } from "@shared/schema";
 import { useGetAccountInfo, useGetLoginInfo } from "@multiversx/sdk-dapp/hooks";
 import useNftStaking from "@/contracts/hooks/useNftStaking";
 import BigNumber from "bignumber.js";
+import { getAccountNfts } from "@/api/mvx";
 
 // Mock data - in production these would come from the API
 const TOTAL_STAKE_POWER = 100000;
@@ -53,8 +54,33 @@ export default function StakePage() {
   const { isLoggedIn } = useGetLoginInfo();
   const { getStakingInfo } = useNftStaking();
 
-  const { data: userNfts, isLoading: nftsLoading } = useQuery<NFT[]>({
-    queryKey: ["/api/users/1/nfts"], // Using demo user ID
+  const { data: stakedNftsData, isLoading: stakedNftsLoading } = useQuery<NFT[]>({
+    queryKey: ["/api/users/1/nfts", "staked", address],
+    enabled: isLoggedIn,
+    queryFn: async () => {
+      if (!isLoggedIn) return [];
+      const response = await fetch("/api/users/1/nfts");
+      if (!response.ok) {
+        throw new Error('Failed to fetch NFTs');
+      }
+      const data = await response.json();
+      return data.filter((nft: NFT) => nft.isStaked);
+    }
+  });
+
+  const { data: walletNftsData, isLoading: walletNftsLoading } = useQuery<NFT[]>({
+    queryKey: ["/api/users/1/nfts", "wallet", address],
+    enabled: isLoggedIn,
+    queryFn: async () => {
+      if (!isLoggedIn) return [];
+      console.log("Api nfts", await getAccountNfts(address));
+      const response = await fetch("/api/users/1/nfts");
+      if (!response.ok) {
+        throw new Error('Failed to fetch NFTs');
+      }
+      const data = await response.json();
+      return data.filter((nft: NFT) => !nft.isStaked);
+    }
   });
 
   const {
@@ -93,8 +119,10 @@ export default function StakePage() {
     },
   });
 
-  const stakedNfts = userNfts?.filter((nft) => nft.isStaked) || [];
-  const walletNfts = userNfts?.filter((nft) => !nft.isStaked) || [];
+  const isLoading = walletNftsLoading || stakedNftsLoading || statsLoading;
+
+  const stakedNfts = stakedNftsData || [];
+  const walletNfts = walletNftsData || [];
 
   const calculateSelectedSum = (
     nfts: NFT[],
@@ -278,7 +306,7 @@ export default function StakePage() {
     );
   };
 
-  if (nftsLoading || statsLoading) {
+  if (isLoading) {
     return (
       <div className="space-y-8 animate-pulse">
         <div className="h-32 bg-muted rounded-lg" />
@@ -345,6 +373,7 @@ export default function StakePage() {
             <Button
               size="sm"
               className="mt-2 w-full bg-green-500 hover:bg-green-600"
+              disabled={stakingStats?.pendingRewards === "0"}
             >
               <ArrowUpFromLine className="h-4 w-4 mr-2" />
               Claim Rewards

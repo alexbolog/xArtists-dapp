@@ -9,6 +9,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { useState } from "react";
+import { useGetLoginInfo } from "@multiversx/sdk-dapp/hooks";
 
 interface NavItemProps {
   href: string;
@@ -45,33 +46,49 @@ const NAV_ITEMS = [
 export default function Layout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { isLoggedIn } = useGetLoginInfo();
 
   const renderNavItems = (onClick?: () => void) => (
-    <nav className="space-y-2">
-      {NAV_ITEMS.map((item) => (
-        <NavItem 
-          key={item.href}
-          href={item.href} 
-          icon={item.icon}
-          isActive={location === item.href}
+    <nav className="flex flex-col h-full">
+      <div className="space-y-2">
+        {NAV_ITEMS.map((item) => (
+          <NavItem
+            key={item.href}
+            href={item.href}
+            icon={item.icon}
+            isActive={location === item.href}
+            onClick={onClick}
+          >
+            {item.label}
+          </NavItem>
+        ))}
+      </div>
+      <div className="mt-auto pt-4">
+        <NavItem
+          key={'/unlock'}
+          href={'/unlock'}
+          icon={<UserCircle className="h-4 w-4" />}
+          isActive={location === '/unlock'}
           onClick={onClick}
         >
-          {item.label}
+          Connect Wallet
         </NavItem>
-      ))}
+      </div>
     </nav>
   );
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="grid lg:grid-cols-[240px_1fr]">
+    <div className="min-h-screen h-screen bg-background">
+      <div className="grid lg:grid-cols-[240px_1fr] h-full">
         {/* Desktop Sidebar */}
-        <aside className="hidden lg:block border-r bg-card p-6">
+        <aside className="hidden lg:flex flex-col border-r bg-card p-6">
           <div className="flex items-center gap-2 mb-8">
             <Palette className="h-6 w-6 text-primary" />
             <h1 className="font-bold text-xl">NFT Gallery</h1>
           </div>
-          {renderNavItems()}
+          <div className="flex-1">
+            {renderNavItems()}
+          </div>
         </aside>
 
         {/* Mobile Navigation */}
@@ -104,7 +121,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           </div>
         </div>
 
-        <main className="p-6">{children}</main>
+        <main className="p-6 h-full overflow-auto">{children}</main>
       </div>
     </div>
   );
