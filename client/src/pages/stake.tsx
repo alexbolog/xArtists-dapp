@@ -38,17 +38,6 @@ interface SelectedQuantity {
   [tokenId: string]: number;
 }
 
-export const getStakingStats: QueryFunction<StakingStats> = async () => {
-  // const response = await fetch("https://your-api-endpoint/staking-stats");
-  // if (!response.ok) throw new Error("Failed to fetch staking stats");
-  // return response.json();
-  return {
-    totalStaked: 15,
-    pendingRewards: "2211.5",
-    stakePower: 75000,
-  };
-};
-
 export default function StakePage() {
   const [walletOpen, setWalletOpen] = useState(false);
   const [selectedStaked, setSelectedStaked] = useState<Set<string>>(new Set());
