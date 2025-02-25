@@ -39,7 +39,7 @@ function Router() {
           <Route path="/stake" component={Stake} />
           <Route
             path="/unlock"
-            component={() => <UnlockPage loginRoute={"/unlock"} />}
+            component={() => <UnlockPage loginRoute={"/"} />}
           />
           <Route component={NotFound} />
         </Switch>

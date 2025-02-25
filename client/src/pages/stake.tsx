@@ -23,7 +23,7 @@ import type { NFT } from "@shared/schema";
 import { useGetAccountInfo, useGetLoginInfo } from "@multiversx/sdk-dapp/hooks";
 import useNftStaking from "@/contracts/hooks/useNftStaking";
 import BigNumber from "bignumber.js";
-import { getAccountNfts } from "@/api/mvx";
+import { ApiNft, getAccountNfts } from "@/api/mvx";
 
 // Mock data - in production these would come from the API
 const TOTAL_STAKE_POWER = 100000;
@@ -59,6 +59,7 @@ export default function StakePage() {
     enabled: isLoggedIn,
     queryFn: async () => {
       if (!isLoggedIn) return [];
+      console.log("Api nfts", await getAccountNfts(address));
       const response = await fetch("/api/users/1/nfts");
       if (!response.ok) {
         throw new Error('Failed to fetch NFTs');
@@ -68,18 +69,14 @@ export default function StakePage() {
     }
   });
 
-  const { data: walletNftsData, isLoading: walletNftsLoading } = useQuery<NFT[]>({
+  const { data: walletNftsData, isLoading: walletNftsLoading } = useQuery<ApiNft[]>({
     queryKey: ["/api/users/1/nfts", "wallet", address],
     enabled: isLoggedIn,
     queryFn: async () => {
       if (!isLoggedIn) return [];
-      console.log("Api nfts", await getAccountNfts(address));
-      const response = await fetch("/api/users/1/nfts");
-      if (!response.ok) {
-        throw new Error('Failed to fetch NFTs');
-      }
-      const data = await response.json();
-      return data.filter((nft: NFT) => !nft.isStaked);
+      const response = await getAccountNfts(address);
+      console.log('wallet nfts API', response);
+      return response;
     }
   });
 
@@ -125,20 +122,17 @@ export default function StakePage() {
   const walletNfts = walletNftsData || [];
 
   const calculateSelectedSum = (
-    nfts: NFT[],
+    nfts: ApiNft[],
     selected: Set<string>,
     quantities: SelectedQuantity
   ) => {
     return nfts
-      .filter((nft) => selected.has(nft.tokenId))
+      .filter((nft) => selected.has(nft.identifier))
       .reduce((sum, nft) => {
-        const quantity = quantities[nft.tokenId] || 1;
-        const isSFT = nft.metadata?.type === "SFT";
+        const quantity = quantities[nft.identifier] || 1;
+        const isSFT = nft.type === "SemiFungibleESDT";
         const effectiveQuantity = isSFT ? quantity : 1;
-        const yieldValue =
-          typeof nft.stakingYield === "string"
-            ? parseFloat(nft.stakingYield)
-            : nft.stakingYield || 0;
+        const yieldValue = 1; // Default yield or calculate from nft properties
         return sum + yieldValue * effectiveQuantity;
       }, 0);
   };
@@ -187,35 +181,35 @@ export default function StakePage() {
     }
   };
 
-  const renderNFTCard = (nft: NFT, isStaked: boolean) => {
-    const isSFT = nft.metadata?.type === "SFT";
-    const maxQuantity = isSFT ? nft.metadata?.quantity || 1 : 1;
+  const renderNFTCard = (nft: ApiNft, isStaked: boolean) => {
+    const isSFT = nft.type === "SemiFungibleESDT";
+    const maxQuantity = isSFT ? parseInt(nft.balance) || 1 : 1;
     const quantities = isStaked ? stakedQuantities : walletQuantities;
     const selected = isStaked ? selectedStaked : selectedWallet;
-    const currentQuantity = quantities[nft.tokenId] || 0;
-
+    const currentQuantity = quantities[nft.identifier] || 0;
+    console.log('nft type', nft);
     return (
       <div
-        key={nft.id}
+        key={nft.identifier}
         className="flex items-center justify-between p-3 md:p-4 border rounded-lg hover:bg-muted/50 transition-colors"
       >
         <div className="flex items-center gap-2 md:gap-4">
           <Checkbox
-            checked={selected.has(nft.tokenId)}
+            checked={selected.has(nft.identifier)}
             onCheckedChange={(checked) => {
               if (checked) {
                 const newSelected = new Set(selected);
-                newSelected.add(nft.tokenId);
+                newSelected.add(nft.identifier);
                 if (isSFT) {
                   if (isStaked) {
                     setStakedQuantities({
                       ...stakedQuantities,
-                      [nft.tokenId]: 1,
+                      [nft.identifier]: 1,
                     });
                   } else {
                     setWalletQuantities({
                       ...walletQuantities,
-                      [nft.tokenId]: 1,
+                      [nft.identifier]: 1,
                     });
                   }
                 }
@@ -226,16 +220,16 @@ export default function StakePage() {
                 }
               } else {
                 const newSelected = new Set(selected);
-                newSelected.delete(nft.tokenId);
+                newSelected.delete(nft.identifier);
                 if (isStaked) {
                   setSelectedStaked(newSelected);
                   const newQuantities = { ...stakedQuantities };
-                  delete newQuantities[nft.tokenId];
+                  delete newQuantities[nft.identifier];
                   setStakedQuantities(newQuantities);
                 } else {
                   setSelectedWallet(newSelected);
                   const newQuantities = { ...walletQuantities };
-                  delete newQuantities[nft.tokenId];
+                  delete newQuantities[nft.identifier];
                   setWalletQuantities(newQuantities);
                 }
               }
@@ -243,8 +237,8 @@ export default function StakePage() {
           />
           <div className="relative">
             <img
-              src={`https://picsum.photos/seed/${nft.id}/100/100`}
-              alt={`NFT ${nft.tokenId}`}
+              src={nft.url || `https://picsum.photos/seed/${nft.identifier}/100/100`}
+              alt={`NFT ${nft.identifier}`}
               className="w-12 h-12 md:w-16 md:h-16 rounded-lg object-cover"
             />
             {isSFT && (
@@ -255,32 +249,32 @@ export default function StakePage() {
           </div>
           <div>
             <h3 className="font-semibold text-sm md:text-base">
-              Token #{nft.tokenId}
+              {nft.name || `Token #${nft.identifier}`}
             </h3>
             <div className="flex flex-wrap gap-1 md:gap-2 items-center mt-1">
               <Badge
                 variant="outline"
                 className="text-yellow-500 border-yellow-500/20 text-xs"
               >
-                {parseFloat(nft.stakingYield || "0").toFixed(1)} Power
+                {1.0} Power {/* Replace with actual staking yield calculation */}
               </Badge>
               <Badge
                 variant="outline"
                 className="text-purple-500 border-purple-500/20 text-xs"
               >
-                {nft.metadata?.type}
+                {nft.type}
               </Badge>
             </div>
           </div>
         </div>
-        {selected.has(nft.tokenId) && isSFT && (
+        {selected.has(nft.identifier) && isSFT && (
           <div className="flex items-center gap-1 md:gap-2 ml-2">
             <Button
               variant="outline"
               size="icon"
               className="h-6 w-6 md:h-8 md:w-8"
               onClick={() =>
-                handleQuantityChange(nft.tokenId, -1, maxQuantity, isStaked)
+                handleQuantityChange(nft.identifier, -1, maxQuantity, isStaked)
               }
               disabled={currentQuantity <= 1}
             >
@@ -294,7 +288,7 @@ export default function StakePage() {
               size="icon"
               className="h-6 w-6 md:h-8 md:w-8"
               onClick={() =>
-                handleQuantityChange(nft.tokenId, 1, maxQuantity, isStaked)
+                handleQuantityChange(nft.identifier, 1, maxQuantity, isStaked)
               }
               disabled={currentQuantity >= maxQuantity}
             >
@@ -383,7 +377,7 @@ export default function StakePage() {
       </div>
 
       {/* Staked NFTs */}
-      <Card>
+      {/* <Card>
         <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-2 sm:space-y-0">
           <CardTitle>Your Staked NFTs</CardTitle>
           {stakedNfts.length > 0 && (
@@ -393,12 +387,12 @@ export default function StakePage() {
                 size="sm"
                 onClick={() => {
                   setSelectedStaked(
-                    new Set(stakedNfts.map((nft) => nft.tokenId))
+                    new Set(stakedNfts.map((nft) => nft.identifier))
                   );
                   const newQuantities = {};
                   stakedNfts.forEach((nft) => {
-                    if (nft.metadata?.type === "SFT") {
-                      newQuantities[nft.tokenId] = nft.metadata?.quantity || 1;
+                    if (nft.type === "SemiFungibleESDT") {
+                      newQuantities[nft.identifier] = parseInt(nft.balance) || 1;
                     }
                   });
                   setStakedQuantities(newQuantities);
@@ -431,7 +425,7 @@ export default function StakePage() {
             )}
           </div>
         </CardContent>
-      </Card>
+      </Card> */}
 
       {/* Wallet NFTs */}
       <Collapsible open={walletOpen} onOpenChange={setWalletOpen}>
@@ -449,12 +443,12 @@ export default function StakePage() {
                         onClick={(e) => {
                           e.stopPropagation();
                           setSelectedWallet(
-                            new Set(walletNfts.map((nft) => nft.tokenId))
+                            new Set(walletNfts.map((nft) => nft.identifier))
                           );
                           const newQuantities = {};
                           walletNfts.forEach((nft) => {
-                            if (nft.metadata?.type === "SFT") {
-                              newQuantities[nft.tokenId] = 1;
+                            if (nft.type === "SemiFungibleESDT") {
+                              newQuantities[nft.identifier] = 1;
                             }
                           });
                           setWalletQuantities(newQuantities);
@@ -492,12 +486,12 @@ export default function StakePage() {
                   onClick={(e) => {
                     e.stopPropagation();
                     setSelectedWallet(
-                      new Set(walletNfts.map((nft) => nft.tokenId))
+                      new Set(walletNfts.map((nft) => nft.identifier))
                     );
                     const newQuantities = {};
                     walletNfts.forEach((nft) => {
-                      if (nft.metadata?.type === "SFT") {
-                        newQuantities[nft.tokenId] = 1;
+                      if (nft.type === "SemiFungibleESDT") {
+                        newQuantities[nft.identifier] = 1;
                       }
                     });
                     setWalletQuantities(newQuantities);

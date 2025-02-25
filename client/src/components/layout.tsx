@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/sheet";
 import { useState } from "react";
 import { useGetLoginInfo } from "@multiversx/sdk-dapp/hooks";
+import { logout } from "@multiversx/sdk-dapp/utils";
 
 interface NavItemProps {
   href: string;
@@ -64,7 +65,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         ))}
       </div>
       <div className="mt-auto pt-4">
-        <NavItem
+        {!isLoggedIn && <NavItem
           key={'/unlock'}
           href={'/unlock'}
           icon={<UserCircle className="h-4 w-4" />}
@@ -72,7 +73,19 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           onClick={onClick}
         >
           Connect Wallet
-        </NavItem>
+        </NavItem>}
+        {isLoggedIn && <NavItem
+          key={'/'}
+          href={'/'}
+          icon={<UserCircle className="h-4 w-4" />}
+          isActive={location === '/logout'}
+          onClick={() => {
+            logout('/');
+            onClick?.();
+          }}
+        >
+          Logout
+        </NavItem>}
       </div>
     </nav>
   );
