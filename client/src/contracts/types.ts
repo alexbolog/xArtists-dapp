@@ -94,3 +94,11 @@ export type ProposalCreatedEvent = {
   start_time: number;
   end_time: number;
 };
+
+export type FullProposalContext = {
+  proposal: Proposal;
+  users_voting_power: string; // BigUint represented as string
+  users_vote: VoteContext | null; // Option<VoteContext> represented as nullable
+  proposal_status: ProposalStatus;
+  proposal_vote_count: ProposalVoteCount;
+};
