@@ -95,7 +95,35 @@ const useTroStaking = () => {
     const interaction = contract.methods.getAllProposals([
       Address.fromBech32(user),
     ]);
-    return handleQueryContract<Array<FullProposalContext>>(interaction);
+    const rawResponse = await handleQueryContract<Array<any>>(interaction);
+    console.log("rawResponse", rawResponse);
+    try {
+      return rawResponse.map((context) => ({
+        ...context,
+        proposal: {
+          ...context.proposal,
+          title: Buffer.from(context.proposal.title).toString(),
+          description: Buffer.from(context.proposal.description).toString(),
+          creator: context.proposal.creator?.toString() || "",
+          id: Number(context.proposal.id),
+          created_at: Number(context.proposal.created_at) * 1000,
+          start_time: Number(context.proposal.start_time) * 1000,
+          end_time: Number(context.proposal.end_time) * 1000,
+        },
+        proposal_status: context.proposal_status.toNumber(),
+        proposal_vote_count: {
+          approve: Number(context.proposal_vote_count.approve),
+          reject: Number(context.proposal_vote_count.reject),
+          abstain: Number(context.proposal_vote_count.abstain),
+          invalid: Number(context.proposal_vote_count.invalid),
+        },
+        users_vote: {},
+        users_voting_power: Number(context.users_voting_power),
+      }));
+    } catch (error) {
+      console.error("Error parsing response", error);
+      return [];
+    }
   };
 
   const getLpToTroRatio = async (
@@ -208,10 +236,9 @@ const useTroStaking = () => {
       denominator: BigNumber;
     }>
   ) => {
-    console.log(
-      "lpToTroRatios",
-      [lpToTroRatios.map((r) => [r.token, r.numerator, r.denominator])]
-    );
+    console.log("lpToTroRatios", [
+      lpToTroRatios.map((r) => [r.token, r.numerator, r.denominator]),
+    ]);
     const contract = getTroStakingContract();
     const interaction = contract.methods
       .createProposal([
