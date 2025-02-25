@@ -45,7 +45,9 @@ const useNftStaking = () => {
     return handleQueryContract(interaction);
   };
 
-  const getStakedItemsRaw = async (address: string): Promise<Array<[string, number]>> => {
+  const getStakedItemsRaw = async (
+    address: string
+  ): Promise<Array<[string, number]>> => {
     const contract = getNftStakingContract();
     const interaction = contract.methods.getStakedItemsRaw([
       Address.fromBech32(address),
@@ -74,7 +76,9 @@ const useNftStaking = () => {
     return handleQueryContract(interaction);
   };
 
-  const getUnstakingItemsRaw = async (address: string): Promise<Array<[number, EsdtTokenPayment[]]>> => {
+  const getUnstakingItemsRaw = async (
+    address: string
+  ): Promise<Array<[number, EsdtTokenPayment[]]>> => {
     const contract = getNftStakingContract();
     const interaction = contract.methods.getUnstakingItemsRaw([
       Address.fromBech32(address),
@@ -96,7 +100,9 @@ const useNftStaking = () => {
     return handleQueryContract(interaction);
   };
 
-  const getPendingRewards = async (address: string): Promise<EsdtTokenPayment[]> => {
+  const getPendingRewards = async (
+    address: string
+  ): Promise<EsdtTokenPayment[]> => {
     const contract = getNftStakingContract();
     const interaction = contract.methods.getPendingRewards([
       Address.fromBech32(address),
@@ -104,10 +110,42 @@ const useNftStaking = () => {
     return handleQueryContract(interaction);
   };
 
-  const getStakedItems = async (address: string): Promise<EsdtTokenPayment[]> => {
+  const getStakedItems = async (
+    address: string
+  ): Promise<EsdtTokenPayment[]> => {
     const contract = getNftStakingContract();
     const interaction = contract.methods.getStakedItems([
       Address.fromBech32(address),
+    ]);
+    return handleQueryContract(interaction);
+  };
+  
+  const getUserRewardRate = async (
+    address: string,
+    tokenId: string
+  ): Promise<string> => {
+    const contract = getNftStakingContract();
+    const interaction = contract.methods.getUserRewardRate([
+      Address.fromBech32(address),
+      tokenId,
+    ]);
+    return handleQueryContract(interaction);
+  };
+
+  const getCurrentRewardRate = async (tokenId: string): Promise<string> => {
+    const contract = getNftStakingContract();
+    const interaction = contract.methods.getCurrentRewardRate([tokenId]);
+    return handleQueryContract(interaction);
+  };
+
+  const getUnstoredRewardsForToken = async (
+    address: string,
+    tokenId: string
+  ): Promise<string> => {
+    const contract = getNftStakingContract();
+    const interaction = contract.methods.getUnstoredRewardsForToken([
+      Address.fromBech32(address),
+      tokenId,
     ]);
     return handleQueryContract(interaction);
   };
@@ -306,6 +344,9 @@ const useNftStaking = () => {
     setRewardTokenId,
     setRewardRate,
     distributeRewards,
+    getUserRewardRate,
+    getCurrentRewardRate,
+    getUnstoredRewardsForToken,
   };
 };
 

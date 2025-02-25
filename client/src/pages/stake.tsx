@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { QueryFunction, useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,7 @@ import useNftStaking from "@/contracts/hooks/useNftStaking";
 import BigNumber from "bignumber.js";
 import { ApiNft, getAccountNfts } from "@/api/mvx";
 import { getContractAddress } from "@/contracts/config";
+import { formatDistanceToNow } from "date-fns";
 
 // Mock data - in production these would come from the API
 const TOTAL_STAKE_POWER = 100000;
@@ -42,6 +43,7 @@ interface SelectedQuantity {
 
 export default function StakePage() {
   const [walletOpen, setWalletOpen] = useState(false);
+  const [stakedOpen, setStakedOpen] = useState(false);
   const [selectedStaked, setSelectedStaked] = useState<Set<string>>(new Set());
   const [selectedWallet, setSelectedWallet] = useState<Set<string>>(new Set());
   const [stakedQuantities, setStakedQuantities] = useState<SelectedQuantity>(
@@ -50,10 +52,12 @@ export default function StakePage() {
   const [walletQuantities, setWalletQuantities] = useState<SelectedQuantity>(
     {}
   );
+  const [hasUnbondedNfts, setHasUnbondedNfts] = useState(false);
 
   const { address } = useGetAccountInfo();
   const { isLoggedIn } = useGetLoginInfo();
-  const { getStakingInfo, stakeNft, unstakeNft } = useNftStaking();
+  const { getStakingInfo, stakeNft, unstakeNft, claimUnstaked, claimRewards } =
+    useNftStaking();
 
   // Create a base query for staking info
   const { data: stakingInfo, isLoading: stakingInfoLoading } = useQuery({
@@ -64,54 +68,94 @@ export default function StakePage() {
           staked_items: [],
           pending_rewards: [],
           staked_score: "0",
+          aggregated_staked_score: "0",
+          unstaking_items: [],
         };
       }
-      return getStakingInfo(address);
+      const apiInfo = await getStakingInfo(address);
+      console.log("apiInfo", apiInfo);
+      return apiInfo;
     },
   });
 
   // Use staked items from the same staking info
-  const { data: stakedNftsData, isLoading: stakedNftsLoading } = useQuery<
-    ApiNft[]
-  >({
+  const { data: stakedNftsData, isLoading: stakedNftsLoading } = useQuery<{
+    stakedNfts: ApiNft[];
+    unbondingNfts: ApiNft[];
+  }>({
     queryKey: ["stakingInfo", address, "nfts"],
     enabled: !!stakingInfo,
-    staleTime: Infinity, // Optional: prevent unnecessary refetches
+    staleTime: Infinity,
     queryFn: async () => {
-      if (!stakingInfo) return [];
-
-      // const stakedIdentifiers = stakingInfo.staked_items.map((item) => {
-      //   let nonce = item.token_nonce.toString(16);
-      //   if (nonce.length % 2 === 1) {
-      //     nonce = "0" + nonce;
-      //   }
-      //   return `${item.token_identifier}-${nonce}`;
-      // });
+      if (!stakingInfo) return { stakedNfts: [], unbondingNfts: [] };
 
       const allStakedNfts = await getAccountNfts(
         getContractAddress("NFT_STAKING")
       );
-      console.log("stakingInfo", stakingInfo?.staked_items);
-      console.log("allStakedNfts", allStakedNfts);
+
+      // Get currently staked NFTs
       const stakedNfts = allStakedNfts
         .filter((nft) =>
-          stakingInfo?.staked_items.some((item) => {
-            return (
-              item.token_identifier === nft.collection &&
-              parseInt(item.token_nonce.toString()) === nft.nonce
-            );
-          })
-        )
-        .map((nft) => ({
-          ...nft,
-          amount: stakingInfo?.staked_items.find(
+          stakingInfo?.staked_items.some(
             (item) =>
               item.token_identifier === nft.collection &&
               parseInt(item.token_nonce.toString()) === nft.nonce
-          )?.amount,
+          )
+        )
+        .map((nft) => ({
+          ...nft,
+          balance: stakingInfo?.staked_items
+            .find(
+              (item) =>
+                item.token_identifier === nft.collection &&
+                parseInt(item.token_nonce.toString()) === nft.nonce
+            )
+            ?.amount.toString(),
         }));
-      console.log("stakedNfts", stakedNfts);
-      return stakedNfts;
+
+      // Get unbonding NFTs from all batches
+      const unbondingNfts = allStakedNfts
+        .filter((nft) =>
+          stakingInfo?.unstaking_items?.some((batch) =>
+            batch.unstake_items.some(
+              (item) =>
+                item.token_identifier === nft.collection &&
+                parseInt(item.token_nonce.toString()) === nft.nonce
+            )
+          )
+        )
+        .map((nft) => {
+          const batch = stakingInfo?.unstaking_items?.find((batch) =>
+            batch.unstake_items.some(
+              (item) =>
+                item.token_identifier === nft.collection &&
+                parseInt(item.token_nonce.toString()) === nft.nonce
+            )
+          );
+          const unbondingTimestamp = parseInt(
+            batch?.unstake_timestamp.toString() || "0"
+          );
+
+          if (unbondingTimestamp + 7 * 24 * 60 * 60 < Date.now() / 1000) {
+            setHasUnbondedNfts(true);
+          }
+
+          return {
+            ...nft,
+            balance: batch?.unstake_items
+              .find(
+                (item) =>
+                  item.token_identifier === nft.collection &&
+                  parseInt(item.token_nonce.toString()) === nft.nonce
+              )
+              ?.amount.toString(),
+            unstakingTimestamp: parseInt(
+              batch?.unstake_timestamp.toString() || "0"
+            ),
+          };
+        });
+
+      return { stakedNfts, unbondingNfts };
     },
   });
 
@@ -152,7 +196,8 @@ export default function StakePage() {
 
   const isLoading = walletNftsLoading || stakedNftsLoading || statsLoading;
 
-  const stakedNfts = stakedNftsData || [];
+  const stakedNfts = stakedNftsData?.stakedNfts || [];
+  const unbondingNfts = stakedNftsData?.unbondingNfts || [];
   const walletNfts = walletNftsData || [];
 
   const calculateSelectedSum = (
@@ -224,11 +269,14 @@ export default function StakePage() {
     return (
       <div
         key={nft.identifier}
-        className="flex items-center justify-between p-3 md:p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+        className={`flex items-center justify-between p-3 md:p-4 border rounded-lg transition-colors ${
+          nft.unstakingTimestamp ? "bg-muted/20" : "hover:bg-muted/50"
+        }`}
       >
         <div className="flex items-center gap-2 md:gap-4">
           <Checkbox
             checked={selected.has(nft.identifier)}
+            disabled={!!nft.unstakingTimestamp}
             onCheckedChange={(checked) => {
               if (checked) {
                 const newSelected = new Set(selected);
@@ -275,7 +323,9 @@ export default function StakePage() {
                 `https://picsum.photos/seed/${nft.identifier}/100/100`
               }
               alt={`NFT ${nft.identifier}`}
-              className="w-12 h-12 md:w-16 md:h-16 rounded-lg object-cover"
+              className={`w-12 h-12 md:w-16 md:h-16 rounded-lg object-cover ${
+                nft.unstakingTimestamp ? "opacity-50" : ""
+              }`}
             />
             {isSFT && (
               <Badge className="absolute -top-2 -right-2 bg-primary text-xs">
@@ -288,13 +338,24 @@ export default function StakePage() {
               {nft.name || `Token #${nft.identifier}`}
             </h3>
             <div className="flex flex-wrap gap-1 md:gap-2 items-center mt-1">
-              <Badge
-                variant="outline"
-                className="text-yellow-500 border-yellow-500/20 text-xs"
-              >
-                {1.0} Power{" "}
-                {/* Replace with actual staking yield calculation */}
-              </Badge>
+              {nft.unstakingTimestamp ? (
+                <Badge
+                  variant="secondary"
+                  className="text-muted-foreground text-xs"
+                >
+                  Unbonding until{" "}
+                  {new Date(
+                    nft.unstakingTimestamp * 1000 + 7 * 24 * 60 * 60 * 1000
+                  ).toLocaleDateString()}
+                </Badge>
+              ) : (
+                <Badge
+                  variant="outline"
+                  className="text-yellow-500 border-yellow-500/20 text-xs"
+                >
+                  {1.0} Power
+                </Badge>
+              )}
               <Badge
                 variant="outline"
                 className="text-purple-500 border-purple-500/20 text-xs"
@@ -365,10 +426,12 @@ export default function StakePage() {
     );
   };
 
-  const handleUnstakeSelected = async (e: React.MouseEvent<HTMLButtonElement>) => {
+  const handleUnstakeSelected = async (
+    e: React.MouseEvent<HTMLButtonElement>
+  ) => {
     e.stopPropagation();
     console.log("selectedStaked", selectedStaked, stakedQuantities);
-    
+
     try {
       await unstakeNft(
         Array.from(selectedStaked).map((identifier: string) => {
@@ -387,6 +450,18 @@ export default function StakePage() {
     } catch (error) {
       console.error("Unstaking failed:", error);
     }
+  };
+
+  const handleClaimUnstakedNfts = async (
+    e: React.MouseEvent<HTMLButtonElement>
+  ) => {
+    e.stopPropagation();
+    await claimUnstaked();
+  };
+
+  const handleClaimRewards = async (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+    await claimRewards();
   };
 
   return (
@@ -445,6 +520,7 @@ export default function StakePage() {
               size="sm"
               className="mt-2 w-full bg-green-500 hover:bg-green-600"
               disabled={stakingStats?.pendingRewards === "0"}
+              onClick={handleClaimRewards}
             >
               <ArrowUpFromLine className="h-4 w-4 mr-2" />
               Claim Rewards
@@ -454,57 +530,90 @@ export default function StakePage() {
       </div>
 
       {/* Staked NFTs */}
-      <Card>
-        <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-2 sm:space-y-0">
-          <CardTitle>Your Staked NFTs</CardTitle>
-          {stakedNfts.length > 0 && (
-            <div className="flex flex-wrap gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  setSelectedStaked(
-                    new Set(stakedNfts.map((nft) => nft.identifier))
-                  );
-                  const newQuantities = {};
-                  stakedNfts.forEach((nft) => {
-                    if (nft.type === "SemiFungibleESDT") {
-                      newQuantities[nft.identifier] =
-                        parseInt(nft.balance) || 1;
-                    }
-                  });
-                  setStakedQuantities(newQuantities);
-                }}
-              >
-                Select All
-              </Button>
-              <Button
-                variant="destructive"
-                size="sm"
-                disabled={selectedStaked.size === 0}
-                onClick={handleUnstakeSelected}
-              >
-                Unstake Selected ({stakedSum.toFixed(1)} Power)
-              </Button>
-            </div>
-          )}
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2 md:space-y-4">
-            {stakedNfts.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <Wallet className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>
-                  No NFTs staked yet. Add some NFTs from your wallet to start
-                  earning rewards.
-                </p>
+      <Collapsible open={stakedOpen} onOpenChange={setStakedOpen}>
+        <Card>
+          <CardHeader className="border-b">
+            <CollapsibleTrigger asChild>
+              <div className="flex items-center justify-between cursor-pointer">
+                <CardTitle>Your Staked NFTs</CardTitle>
+                <div className="flex items-center gap-4">
+                  {stakedNfts.length > 0 && stakedOpen && (
+                    <div className="hidden sm:flex items-center gap-2">
+                      {unbondingNfts.length > 0 && hasUnbondedNfts && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleClaimUnstakedNfts}
+                        >
+                          Claim Unbonding NFTs
+                        </Button>
+                      )}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedStaked(
+                            new Set(stakedNfts.map((nft) => nft.identifier))
+                          );
+                          const newQuantities = {};
+                          stakedNfts.forEach((nft) => {
+                            if (nft.type === "SemiFungibleESDT") {
+                              newQuantities[nft.identifier] =
+                                parseInt(nft.balance) || 1;
+                            }
+                          });
+                          setStakedQuantities(newQuantities);
+                        }}
+                      >
+                        Select All
+                      </Button>
+                      {selectedStaked.size > 0 && (
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          disabled={selectedStaked.size === 0}
+                          onClick={handleUnstakeSelected}
+                        >
+                          Unstake Selected ({stakedSum.toFixed(1)} Power)
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                  <ChevronDown
+                    className={`h-4 w-4 transition-transform ${
+                      stakedOpen ? "rotate-180" : ""
+                    }`}
+                  />
+                </div>
               </div>
-            ) : (
-              stakedNfts.map((nft) => renderNFTCard(nft, true))
-            )}
-          </div>
-        </CardContent>
-      </Card>
+            </CollapsibleTrigger>
+          </CardHeader>
+          <CollapsibleContent>
+            <CardContent>
+              <div className="space-y-2 md:space-y-4 gap-2 mt-4">
+                {stakedNfts.length === 0 && unbondingNfts.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Wallet className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>
+                      No NFTs staked yet. Add some NFTs from your wallet to
+                      start earning rewards.
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    {/* Active staked NFTs */}
+                    {stakedNfts.map((nft) => renderNFTCard(nft, true))}
+
+                    {/* Unbonding NFTs */}
+                    {unbondingNfts.map((nft) => renderNFTCard(nft, true))}
+                  </>
+                )}
+              </div>
+            </CardContent>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
 
       {/* Wallet NFTs */}
       <Collapsible open={walletOpen} onOpenChange={setWalletOpen}>

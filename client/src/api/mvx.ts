@@ -30,6 +30,7 @@ export interface ApiNft {
     metadata: ApiNftMetadata;
     balance: string;
     ticker: string;
+    unstakingTimestamp?: number;
 }
 
 export const getAccountNfts = async (address: string, identifiers?: string[]): Promise<ApiNft[]> => {
