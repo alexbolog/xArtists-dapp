@@ -208,6 +208,10 @@ const useTroStaking = () => {
       denominator: BigNumber;
     }>
   ) => {
+    console.log(
+      "lpToTroRatios",
+      [lpToTroRatios.map((r) => [r.token, r.numerator, r.denominator])]
+    );
     const contract = getTroStakingContract();
     const interaction = contract.methods
       .createProposal([
@@ -216,7 +220,7 @@ const useTroStaking = () => {
         minVotingPowerToValidateVote,
         startTime,
         endTime,
-        lpToTroRatios,
+        ...lpToTroRatios.map((r) => [r.token, r.numerator, r.denominator]),
       ])
       .withGasLimit(DEFAULT_GAS_LIMIT);
     return handleSendTransaction(interaction);

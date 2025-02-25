@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { insertProposalSchema } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -34,16 +34,15 @@ import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import useTroStaking from "@/contracts/hooks/useTroStaking";
+import { getTokens, getTokenSupply, TokenSupply } from "@/api/mvx";
 
 // Mock list of available tokens - in production this would come from an API
 const AVAILABLE_TOKENS = [
-  { id: "gov", name: "Governance Token (GOV)" },
-  { id: "stake", name: "Staking Token (STAKE)" },
-  { id: "art", name: "Art Token (ART)" },
+  { id: "TROLP1-2990e5", name: "TRO LP 1" },
+  { id: "TROLP2-291180", name: "TRO LP 2" },
 ];
 
-// Mock total voting power - in production this would come from the API
-const TOTAL_VOTING_POWER = 10000;
+const TRO_TOKEN_ID = "TRO-9003a7";
 
 interface CreateProposalModalProps {
   open: boolean;
@@ -61,15 +60,46 @@ export default function CreateProposalModal({
   const [minVotingPowerPercent, setMinVotingPowerPercent] =
     useState<number>(10);
 
+  const { data: eligibleTokenSupplies } = useQuery({
+    queryKey: ["eligibleTokenSupplies"],
+    queryFn: async () => {
+      let supplies: { [key: string]: TokenSupply } = {};
+      const identifiers = AVAILABLE_TOKENS.map((token) => token.id).concat([
+        TRO_TOKEN_ID,
+      ]);
+      for (const identifier of identifiers) {
+        const supply = await getTokenSupply(identifier);
+        supplies[identifier] = supply;
+      }
+      return supplies;
+    },
+  });
+
+  const totalVotingPower = useMemo(() => {
+    if (!eligibleTokenSupplies) return 0;
+
+    // TRO token is always included
+    let total = BigInt(
+      eligibleTokenSupplies[TRO_TOKEN_ID]?.circulatingSupply || 0
+    );
+
+    // Add selected LP tokens
+    selectedTokens.forEach((tokenId) => {
+      total += BigInt(eligibleTokenSupplies[tokenId]?.circulatingSupply || 0);
+    });
+
+    return Number(total);
+  }, [eligibleTokenSupplies, selectedTokens]);
+
   const form = useForm({
     resolver: zodResolver(insertProposalSchema),
     defaultValues: {
       title: "",
       description: "",
-      creatorId: 1, // Demo user ID
+      creatorId: 1,
       startTime: new Date(),
-      endTime: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
-      minVotingPower: (TOTAL_VOTING_POWER * 0.1).toString(), // 10% default
+      endTime: new Date(Date.now() + 60 * 60 * 1000),
+      minVotingPower: (totalVotingPower * 0.1).toString(),
       eligibleTokens: [],
     },
   });
@@ -87,19 +117,57 @@ export default function CreateProposalModal({
     setMinVotingPowerPercent(percent);
     form.setValue(
       "minVotingPower",
-      Math.floor(TOTAL_VOTING_POWER * (percent / 100)).toString()
+      Math.floor(totalVotingPower * (percent / 100)).toString()
     );
   };
 
   const handleCreateProposal = async (data: any) => {
     try {
-      // await createProposal(data);
       const formattedData = {
         ...data,
         startTime: Math.floor(new Date(data.startTime).getTime() / 1000),
         endTime: Math.floor(new Date(data.endTime).getTime() / 1000),
+        eligibleTokens: [TRO_TOKEN_ID, ...selectedTokens],
       };
-      console.log("formattedData", formattedData);
+
+      // Convert to UTC timestamps
+      const startTimeUTC = Math.floor(Date.UTC(
+        data.startTime.getFullYear(),
+        data.startTime.getMonth(),
+        data.startTime.getDate(),
+        data.startTime.getHours(),
+        data.startTime.getMinutes()
+      ) / 1000);
+
+      const endTimeUTC = Math.floor(Date.UTC(
+        data.endTime.getFullYear(),
+        data.endTime.getMonth(),
+        data.endTime.getDate(),
+        data.endTime.getHours(),
+        data.endTime.getMinutes()
+      ) / 1000);
+
+      const formattedDataUTC = {
+        ...formattedData,
+        startTime: startTimeUTC,
+        endTime: endTimeUTC,
+      };
+
+      console.log("formattedData", formattedDataUTC);
+
+      await createProposal(
+        formattedDataUTC.title,
+        formattedDataUTC.description,
+        formattedDataUTC.minVotingPower,
+        formattedDataUTC.startTime,
+        formattedDataUTC.endTime,
+        formattedDataUTC.eligibleTokens.map((token: string) => ({
+          token: token,
+          // hardcoded for now, should be computed based on the TRO token supply of each pool
+          numerator: 1,
+          denominator: 1,
+        }))
+      );
       toast({
         title: "Success",
         description: "Proposal created successfully",
@@ -112,6 +180,7 @@ export default function CreateProposalModal({
         description: "Failed to create proposal",
         variant: "destructive",
       });
+      console.error(error);
     }
   };
 
@@ -302,7 +371,7 @@ export default function CreateProposalModal({
                         </span>
                         <span>
                           {Math.floor(
-                            TOTAL_VOTING_POWER * (minVotingPowerPercent / 100)
+                            totalVotingPower * (minVotingPowerPercent / 100)
                           )}{" "}
                           tokens
                         </span>
