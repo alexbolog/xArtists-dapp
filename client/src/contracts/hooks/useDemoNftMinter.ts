@@ -19,7 +19,9 @@ const useDemoNftMinter = () => {
   };
 
   // Read functions
-  const getNftPrice = async (nftNonce: number): Promise<OptionalPriceTag | null> => {
+  const getNftPrice = async (
+    nftNonce: number
+  ): Promise<OptionalPriceTag | null> => {
     const contract = getDemoNftMinterContract();
     const interaction = contract.methods.getNftPrice([nftNonce]);
     return handleQueryContract<OptionalPriceTag | null>(interaction);
@@ -29,6 +31,16 @@ const useDemoNftMinter = () => {
     const contract = getDemoNftMinterContract();
     const interaction = contract.methods.getAllNftsForSale();
     return handleQueryContract<NftForSale[]>(interaction);
+  };
+
+  const getNftsForSaleMap = async (): Promise<Record<string, string>> => {
+    const nftsForSale = await getAllNftsForSale();
+    const rec: Record<string, string> = {};
+    nftsForSale.forEach((nft) => {
+      rec[nft.nft_nonce.toString()] = nft.price_tag.amount;
+    });
+
+    return rec;
   };
 
   // Write functions
@@ -67,7 +79,7 @@ const useDemoNftMinter = () => {
     if (payment) {
       interaction.withSingleESDTTransfer(payment);
     }
-    
+
     return handleSendTransaction(interaction);
   };
 
@@ -122,6 +134,9 @@ const useDemoNftMinter = () => {
     issueToken,
     setLocalRoles,
     claimRoyaltiesFromMarketplace,
+
+    // Utility functions
+    getNftsForSaleMap,
   };
 };
 

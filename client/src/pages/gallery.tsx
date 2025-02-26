@@ -1,11 +1,14 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
-  Card,
-  CardContent,
-} from "@/components/ui/card";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Carousel,
   CarouselContent,
@@ -19,53 +22,48 @@ import ApiNftArtworkCard from "@/components/api-nft-artwork-card";
 import { getCollectionNfts } from "@/api/mvx";
 import { getDemoCollectionTokenId } from "@/contracts/config";
 import type { ApiNft } from "@/api/mvx";
+import type { Artwork } from "@shared/schema";
+import ArtworkCard from "@/components/artwork-card";
+import { mapNftToArtwork } from "@/utils";
 
 export default function Gallery() {
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState("votes");
-  const [filteredArtworks, setFilteredArtworks] = useState<ApiNft[]>([]);
+  const [filteredArtworks, setFilteredArtworks] = useState<Artwork[]>([]);
 
-  const { data: artworks, isLoading } = useQuery<ApiNft[]>({
+  const { data: apiNfts, isLoading } = useQuery<ApiNft[]>({
     queryKey: ["collection-nfts"],
     queryFn: () => getCollectionNfts(getDemoCollectionTokenId()),
   });
+
+  // Transform ApiNft[] to Artwork[]
+  const artworks = apiNfts?.map((nft) => mapNftToArtwork(nft));
 
   useEffect(() => {
     if (!artworks) return;
 
     let sorted = [...artworks];
 
-    // Apply search filter
     if (search) {
       sorted = sorted.filter(
-        /*
-        art => 
-          art.title.toLowerCase().includes(search.toLowerCase()) ||
-          art.description?.toLowerCase().includes(search.toLowerCase()) ||
-          art.artist.toLowerCase().includes(search.toLowerCase())
-         */
-        (nft) =>
-          nft.name.toLowerCase().includes(search.toLowerCase()) ||
-          nft.metadata?.description
-            ?.toLowerCase()
-            .includes(search.toLowerCase()) ||
-          nft.creator.toLowerCase().includes(search.toLowerCase())
+        (artwork) =>
+          artwork.title.toLowerCase().includes(search.toLowerCase()) ||
+          artwork.description?.toLowerCase().includes(search.toLowerCase()) ||
+          artwork.artist.toLowerCase().includes(search.toLowerCase())
       );
     }
 
     // Apply sorting
-    switch (sort) {
-      case "recent":
-        sorted.sort((a, b) => b.nonce - a.nonce);
-        break;
-      // Note: Removed votes and highest_sales sorting as they're not available in ApiNft
-    }
+    // switch (sort) {
+    //   case "recent":
+    //     sorted.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    //     break;
+    // }
 
     setFilteredArtworks(sorted);
   }, [artworks, search, sort]);
 
-  //   const artworksForSale = artworks?.filter(a => a.price !== null) || [];
-  const artworksForSale = artworks || []; // For now, showing all NFTs in featured section
+  const artworksForSale = artworks || [];
 
   return (
     <div>
@@ -91,12 +89,12 @@ export default function Gallery() {
               </h2>
               <Carousel className="w-full">
                 <CarouselContent>
-                  {artworksForSale.map((nft) => (
+                  {artworksForSale.map((artwork) => (
                     <CarouselItem
-                      key={nft.identifier}
+                      key={artwork.id}
                       className="md:basis-1/2 lg:basis-1/3"
                     >
-                      <ApiNftArtworkCard apiNft={nft} />
+                      <ArtworkCard artwork={artwork} />
                     </CarouselItem>
                   ))}
                 </CarouselContent>
@@ -138,8 +136,8 @@ export default function Gallery() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredArtworks.map((nft) => (
-              <ApiNftArtworkCard key={nft.identifier} apiNft={nft} />
+            {filteredArtworks.map((artwork) => (
+              <ArtworkCard key={artwork.id} artwork={artwork} />
             ))}
           </div>
         </div>
