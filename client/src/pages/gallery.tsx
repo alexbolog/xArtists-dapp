@@ -25,19 +25,28 @@ import type { ApiNft } from "@/api/mvx";
 import type { Artwork } from "@shared/schema";
 import ArtworkCard from "@/components/artwork-card";
 import { mapNftToArtwork } from "@/utils";
+import useDemoNftMinter from "@/contracts/hooks/useDemoNftMinter";
 
 export default function Gallery() {
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState("votes");
   const [filteredArtworks, setFilteredArtworks] = useState<Artwork[]>([]);
+  const { getNftsForSaleMap } = useDemoNftMinter();
 
   const { data: apiNfts, isLoading } = useQuery<ApiNft[]>({
     queryKey: ["collection-nfts"],
     queryFn: () => getCollectionNfts(getDemoCollectionTokenId()),
   });
 
-  // Transform ApiNft[] to Artwork[]
-  const artworks = apiNfts?.map((nft) => mapNftToArtwork(nft));
+  const { data: priceMap } = useQuery<Record<string, string>>({
+    queryKey: ["nfts-price-map"],
+    queryFn: () => getNftsForSaleMap(),
+  });
+
+  // Transform ApiNft[] to Artwork[] with prices
+  const artworks = apiNfts?.map((nft) => 
+    mapNftToArtwork(nft, priceMap?.[nft.nonce.toString()])
+  );
 
   useEffect(() => {
     if (!artworks) return;

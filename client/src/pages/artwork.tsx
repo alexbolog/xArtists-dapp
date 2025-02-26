@@ -1,16 +1,26 @@
 import { useQuery } from "@tanstack/react-query";
 import { useParams } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Heart, Share2, Sparkles, ShoppingCart, Send } from "lucide-react";
+import {
+  Heart,
+  Share2,
+  Sparkles,
+  ShoppingCart,
+  Send,
+  ExternalLink,
+} from "lucide-react";
 import { getNftById } from "@/api/mvx";
 import { mapNftToArtwork } from "@/utils";
 import type { ApiNft } from "@/api/mvx";
 import type { Artwork } from "@shared/schema";
 import { getDemoCollectionTokenId } from "@/contracts/config";
 import { extractAiAnalysis } from "@/utils";
+import useDemoNftMinter from "@/contracts/hooks/useDemoNftMinter";
+import BigNumber from "bignumber.js";
 
 export default function ArtworkPage() {
   const { id } = useParams();
+  const { getNftPrice } = useDemoNftMinter();
 
   const nonceToHex = (nonce: number) => {
     let nonceHex = `${nonce.toString(16)}`;
@@ -20,7 +30,7 @@ export default function ArtworkPage() {
     return nonceHex;
   };
 
-  const { data: nft, isLoading } = useQuery<ApiNft>({
+  const { data: nft, isLoading: isLoadingNft } = useQuery<ApiNft>({
     queryKey: [`nft-${id}`],
     queryFn: async () => {
       const identifier = `${getDemoCollectionTokenId()}-${nonceToHex(
@@ -32,9 +42,21 @@ export default function ArtworkPage() {
     enabled: !!id,
   });
 
+  const { data: priceData, isLoading: isLoadingPrice } = useQuery({
+    queryKey: [`nft-price-${id}`],
+    queryFn: async () => {
+      const nonce = parseInt(id || "0");
+      const price = await getNftPrice(nonce);
+
+      // it's an array of 3 elements
+      return { amount: price[2].toString() };
+    },
+    enabled: !!id,
+  });
+
   const aiAnalysis = nft ? extractAiAnalysis(nft) : null;
 
-  if (isLoading) {
+  if (isLoadingNft || isLoadingPrice) {
     return (
       <div className="animate-pulse">
         <div className="h-96 bg-muted rounded-lg mb-8" />
@@ -48,21 +70,26 @@ export default function ArtworkPage() {
   if (!nft) {
     return (
       <div className="flex flex-col items-center justify-center gap-4 py-12">
-        <h2 className="text-2xl font-semibold text-muted-foreground">Artwork not found</h2>
-        <Button variant="outline" onClick={() => window.location.href = '/gallery'}>
+        <h2 className="text-2xl font-semibold text-muted-foreground">
+          Artwork not found
+        </h2>
+        <Button
+          variant="outline"
+          onClick={() => (window.location.href = "/gallery")}
+        >
           Return to Gallery
         </Button>
       </div>
     );
   }
 
-  const artwork: Artwork = mapNftToArtwork(nft);
+  const artwork: Artwork = mapNftToArtwork(nft, priceData?.amount);
 
-  // Demo price data - in production this would come from the API
+  // Update sale info to use actual price data
   const saleInfo = {
-    isForSale: artwork.price !== null,
-    price: artwork.price || "0.5",
-    lastSoldPrice: "0.3",
+    isForSale: priceData !== null,
+    price: priceData?.amount || null,
+    // lastSoldPrice: "0", // Keep this as is or remove if not needed
   };
 
   return (
@@ -99,7 +126,7 @@ export default function ArtworkPage() {
               className="gap-2 bg-green-500 hover:bg-green-600"
             >
               <ShoppingCart className="h-5 w-5" />
-              Buy for {saleInfo.price} TRO
+              Buy for {new BigNumber(priceData?.amount || "0").shiftedBy(-18).toString()} TRO
             </Button>
           ) : (
             <Button size="lg" variant="outline" className="gap-2">
@@ -152,12 +179,24 @@ export default function ArtworkPage() {
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Creator</p>
-              <p className="font-mono truncate">{nft.creator}</p>
+              <a
+                href={`${import.meta.env.VITE_EXPLORER_URL}/address/${
+                  nft.creator
+                }`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1 hover:opacity-80"
+              >
+                <p className="font-mono">
+                  {`${nft.creator.slice(0, 6)}...${nft.creator.slice(-6)}`}
+                </p>
+                <ExternalLink className="h-4 w-4" />
+              </a>
             </div>
             {!saleInfo.isForSale && (
               <div>
                 <p className="text-sm text-muted-foreground">Last Sold For</p>
-                <p className="font-medium">{saleInfo.lastSoldPrice} TRO</p>
+                <p className="font-medium">N/A TRO</p>
               </div>
             )}
           </div>

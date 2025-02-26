@@ -137,7 +137,7 @@ export default function Create() {
         "https://ipfs.io/ipfs/QmPano8fKhpKaykrCGAZ2LYEYmFV5c1dpdeThXdN54a8HZ",
       metadata_uri:
         "https://ipfs.io/ipfs/bafkreibngetnjgfzrq2ovxw7ek745rk6vz34y23yxjau3qgpxcwltvdq7a",
-      selling_price: "1000000000000000000",
+      selling_price: "1234000000000000000",
       opt_token_used_as_payment: TRO_TOKEN_ID,
     });
   };
