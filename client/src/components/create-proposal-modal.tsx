@@ -35,14 +35,13 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import useTroStaking from "@/contracts/hooks/useTroStaking";
 import { getTokens, getTokenSupply, TokenSupply } from "@/api/mvx";
+import { TRO_TOKEN_ID } from "@/contracts/config";
 
 // Mock list of available tokens - in production this would come from an API
 const AVAILABLE_TOKENS = [
   { id: "TROLP1-2990e5", name: "TRO LP 1" },
   { id: "TROLP2-291180", name: "TRO LP 2" },
 ];
-
-const TRO_TOKEN_ID = "TRO-9003a7";
 
 interface CreateProposalModalProps {
   open: boolean;

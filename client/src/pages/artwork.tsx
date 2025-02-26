@@ -2,14 +2,37 @@ import { useQuery } from "@tanstack/react-query";
 import { useParams } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Heart, Share2, Sparkles, ShoppingCart, Send } from "lucide-react";
+import { getNftById } from "@/api/mvx";
+import { mapNftToArtwork } from "@/utils";
+import type { ApiNft } from "@/api/mvx";
 import type { Artwork } from "@shared/schema";
+import { getDemoCollectionTokenId } from "@/contracts/config";
+import { extractAiAnalysis } from "@/utils";
 
 export default function ArtworkPage() {
   const { id } = useParams();
 
-  const { data: artwork, isLoading } = useQuery<Artwork>({
-    queryKey: [`/api/artworks/${id}`],
+  const nonceToHex = (nonce: number) => {
+    let nonceHex = `${nonce.toString(16)}`;
+    if (nonceHex.length % 2 === 1) {
+      nonceHex = "0" + nonceHex;
+    }
+    return nonceHex;
+  };
+
+  const { data: nft, isLoading } = useQuery<ApiNft>({
+    queryKey: [`nft-${id}`],
+    queryFn: async () => {
+      const identifier = `${getDemoCollectionTokenId()}-${nonceToHex(
+        parseInt(id || "0")
+      )}`;
+      const nft = await getNftById(identifier);
+      return nft;
+    },
+    enabled: !!id,
   });
+
+  const aiAnalysis = nft ? extractAiAnalysis(nft) : null;
 
   if (isLoading) {
     return (
@@ -22,15 +45,17 @@ export default function ArtworkPage() {
     );
   }
 
-  if (!artwork) {
+  if (!nft) {
     return <div>Artwork not found</div>;
   }
+
+  const artwork: Artwork = mapNftToArtwork(nft);
 
   // Demo price data - in production this would come from the API
   const saleInfo = {
     isForSale: artwork.price !== null,
     price: artwork.price || "0.5",
-    lastSoldPrice: "0.3"
+    lastSoldPrice: "0.3",
   };
 
   return (
@@ -53,32 +78,31 @@ export default function ArtworkPage() {
         </div>
 
         <div className="flex flex-col gap-2">
-          <Button size="lg" className="gap-2 bg-gradient-to-r from-primary to-primary-600 hover:opacity-90 transition-opacity">
+          <Button
+            size="lg"
+            className="gap-2 bg-gradient-to-r from-primary to-primary-600 hover:opacity-90 transition-opacity"
+          >
             <Heart className="h-5 w-5" />
-            Like {artwork.voteCount ? `(${artwork.voteCount})` : ''}
+            Like {artwork.voteCount ? `(${artwork.voteCount})` : ""}
           </Button>
           {saleInfo.isForSale ? (
-            <Button 
-              size="lg" 
-              variant="default" 
+            <Button
+              size="lg"
+              variant="default"
               className="gap-2 bg-green-500 hover:bg-green-600"
             >
               <ShoppingCart className="h-5 w-5" />
               Buy for {saleInfo.price} TRO
             </Button>
           ) : (
-            <Button 
-              size="lg" 
-              variant="outline" 
-              className="gap-2"
-            >
+            <Button size="lg" variant="outline" className="gap-2">
               <Send className="h-5 w-5" />
               Contact Seller
             </Button>
           )}
-          <Button 
-            size="lg" 
-            variant="outline" 
+          <Button
+            size="lg"
+            variant="outline"
             className="gap-2 border-primary/20 hover:border-primary transition-colors"
           >
             <Share2 className="h-5 w-5" />
@@ -89,21 +113,24 @@ export default function ArtworkPage() {
 
       {artwork.hasPhysicalAsset && artwork.physicalAssetDetails && (
         <div className="mt-8 p-6 bg-muted rounded-lg">
-          <h2 className="text-xl font-semibold mb-4">Physical Artwork Details</h2>
+          <h2 className="text-xl font-semibold mb-4">
+            Physical Artwork Details
+          </h2>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            {Object.entries(artwork.physicalAssetDetails).map(([key, value]) => (
-              <div key={key} className="space-y-1">
-                <p className="text-sm text-muted-foreground capitalize">
-                  {key.replace(/([A-Z])/g, ' $1').trim()}
-                </p>
-                <p className="font-medium">
-                  {typeof value === 'number' 
-                    ? `${value}${key.includes('weight') ? ' kg' : ' cm'}`
-                    : value.toString()
-                  }
-                </p>
-              </div>
-            ))}
+            {Object.entries(artwork.physicalAssetDetails).map(
+              ([key, value]) => (
+                <div key={key} className="space-y-1">
+                  <p className="text-sm text-muted-foreground capitalize">
+                    {key.replace(/([A-Z])/g, " $1").trim()}
+                  </p>
+                  <p className="font-medium">
+                    {typeof value === "number"
+                      ? `${value}${key.includes("weight") ? " kg" : " cm"}`
+                      : value.toString()}
+                  </p>
+                </div>
+              )
+            )}
           </div>
         </div>
       )}
@@ -114,11 +141,11 @@ export default function ArtworkPage() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <p className="text-sm text-muted-foreground">Token ID</p>
-              <p className="font-mono">{artwork.mintedNftId}</p>
+              <p className="font-mono">{nft.identifier}</p>
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Owner</p>
-              <p className="font-mono truncate">0x123...abc</p>
+              <p className="text-sm text-muted-foreground">Creator</p>
+              <p className="font-mono truncate">{nft.creator}</p>
             </div>
             {!saleInfo.isForSale && (
               <div>
@@ -130,30 +157,54 @@ export default function ArtworkPage() {
         </div>
       )}
 
-      <div className="mt-8 p-6 rounded-lg bg-purple-500/10 border border-purple-500/20">
-        <div className="flex items-center gap-2 mb-4">
-          <Sparkles className="h-5 w-5 text-purple-500" />
-          <h3 className="text-lg font-semibold text-purple-500">AI Analysis</h3>
+      {aiAnalysis && (
+        <div className="mt-8 p-6 rounded-lg bg-purple-500/10 border border-purple-500/20">
+          <div className="flex items-center gap-2 mb-4">
+            <Sparkles className="h-5 w-5 text-purple-500" />
+            <h3 className="text-lg font-semibold text-purple-500">
+              AI Analysis
+            </h3>
+          </div>
+          <div className="space-y-4">
+            {aiAnalysis.styleRecognition && (
+              <div>
+                <h4 className="text-sm font-medium text-purple-500/80 mb-1">
+                  Style Recognition
+                </h4>
+                <p className="text-sm">{aiAnalysis.styleRecognition}</p>
+              </div>
+            )}
+            {aiAnalysis.colorPalette && (
+              <div>
+                <h4 className="text-sm font-medium text-purple-500/80 mb-1">
+                  Color Palette
+                </h4>
+                <p className="text-sm">{aiAnalysis.colorPalette}</p>
+              </div>
+            )}
+            {aiAnalysis.composition &&
+              Object.keys(aiAnalysis.composition).length > 0 && (
+                <div>
+                  <h4 className="text-sm font-medium text-purple-500/80 mb-1">
+                    Composition Analysis
+                  </h4>
+                  <div className="space-y-2">
+                    {Object.entries(aiAnalysis.composition).map(
+                      ([key, value]) => (
+                        <div key={key}>
+                          <span className="text-sm text-purple-500/80 capitalize mr-1 ml-2">
+                            <b>{key.replace(/([A-Z])/g, " $1").trim()}</b>
+                          </span>
+                          <span className="text-sm">{value}</span>
+                        </div>
+                      )
+                    )}
+                  </div>
+                </div>
+              )}
+          </div>
         </div>
-        <div className="space-y-4">
-          <div>
-            <h4 className="text-sm font-medium text-purple-500/80 mb-1">Style Recognition</h4>
-            <p className="text-sm">Contemporary abstract expressionism with influences from digital art movements</p>
-          </div>
-          <div>
-            <h4 className="text-sm font-medium text-purple-500/80 mb-1">Color Palette</h4>
-            <p className="text-sm">Dominated by vibrant blues and warm earth tones, creating a balanced composition</p>
-          </div>
-          <div>
-            <h4 className="text-sm font-medium text-purple-500/80 mb-1">Composition Analysis</h4>
-            <p className="text-sm">Strong diagonal elements with a central focal point, following the rule of thirds</p>
-          </div>
-          <div>
-            <h4 className="text-sm font-medium text-purple-500/80 mb-1">Unique Features</h4>
-            <p className="text-sm">Distinctive brushwork technique and innovative use of negative space</p>
-          </div>
-        </div>
-      </div>
+      )}
     </div>
   );
 }

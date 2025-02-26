@@ -32,6 +32,9 @@ import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Upload, Image, Sparkles } from "lucide-react";
 import { z } from "zod";
+import useDemoNftMinter from "@/contracts/hooks/useDemoNftMinter";
+import { TRO_TOKEN_ID } from "@/contracts/config";
+import { useGetLoginInfo } from "@multiversx/sdk-dapp/hooks";
 
 export default function Create() {
   const [, setLocation] = useLocation();
@@ -40,6 +43,9 @@ export default function Create() {
   const [hasPhysicalAsset, setHasPhysicalAsset] = useState(false);
   const [showAiAnalysis, setShowAiAnalysis] = useState(false);
   const [imageBase64, setImageBase64] = useState<string | null>(null);
+
+  const { isLoggedIn } = useGetLoginInfo();
+  const { createNft } = useDemoNftMinter();
 
   const form = useForm<z.infer<typeof insertArtworkSchema>>({
     resolver: zodResolver(insertArtworkSchema),
@@ -115,14 +121,41 @@ export default function Create() {
   const handleSubmit = async (data: any) => {
     console.log({
       ...data,
-      imageBase64: "data:image/png;base64,<BASE64aici>",
-      imageUrl: null
+      imageBase64,
+      imageUrl: null,
     });
-    // await createArtwork.mutate({
-    //   ...data,
-    //   imageUrl: imageBase64,
-    // });
+
+    // TODO: add backend call here
+    // TODO: add send mint transaction here
+
+    await createNft({
+      name: "test",
+      royalties: "0",
+      attributes:
+        "tags:xArtists,AIMegaWaveHackathon;metadata:bafkreibngetnjgfzrq2ovxw7ek745rk6vz34y23yxjau3qgpxcwltvdq7a",
+      asset_uri:
+        "https://ipfs.io/ipfs/QmPano8fKhpKaykrCGAZ2LYEYmFV5c1dpdeThXdN54a8HZ",
+      metadata_uri:
+        "https://ipfs.io/ipfs/bafkreibngetnjgfzrq2ovxw7ek745rk6vz34y23yxjau3qgpxcwltvdq7a",
+      selling_price: "1000000000000000000",
+      opt_token_used_as_payment: TRO_TOKEN_ID,
+    });
   };
+
+  // Add early return if not logged in
+  if (!isLoggedIn) {
+    return (
+      <div className="max-w-2xl mx-auto text-center">
+        <h1 className="text-3xl font-bold mb-8">Create NFT</h1>
+        <Card className="p-6">
+          <p className="mb-4">Please connect your wallet to create NFTs</p>
+          <Button onClick={() => setLocation("/unlock")}>
+            Connect Wallet
+          </Button>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-2xl mx-auto">

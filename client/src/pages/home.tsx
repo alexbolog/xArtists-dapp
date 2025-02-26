@@ -2,8 +2,10 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
-import ArtworkCard from "@/components/artwork-card";
-import type { Artwork } from "@shared/schema";
+import ApiNftArtworkCard from "@/components/api-nft-artwork-card";
+import { getCollectionNfts } from "@/api/mvx";
+import { getDemoCollectionTokenId } from "@/contracts/config";
+import type { ApiNft } from "@/api/mvx";
 
 function Hero() {
   return (
@@ -34,8 +36,9 @@ function Hero() {
 }
 
 export default function Home() {
-  const { data: artworks, isLoading } = useQuery<Artwork[]>({
-    queryKey: ["/api/artworks"],
+  const { data: nfts, isLoading } = useQuery<ApiNft[]>({
+    queryKey: ["collection-nfts"],
+    queryFn: () => getCollectionNfts(getDemoCollectionTokenId()),
   });
 
   return (
@@ -64,8 +67,8 @@ export default function Home() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {artworks?.slice(0, 3).map((artwork) => (
-              <ArtworkCard key={artwork.id} artwork={artwork} />
+            {nfts?.slice(0, 3).map((nft) => (
+              <ApiNftArtworkCard key={nft.identifier} apiNft={nft} />
             ))}
           </div>
         )}

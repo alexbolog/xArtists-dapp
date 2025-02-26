@@ -9,7 +9,9 @@ export interface ApiNftMedia {
 }
 
 export interface ApiNftMetadata {
-    description: string;
+  title?: string;
+  attributes?: NftAttribute[];
+  description?: string;
 }
 
 export interface ApiNft {
@@ -44,6 +46,26 @@ export const getAccountNfts = async (address: string, identifiers?: string[]): P
     }
     return response.json();
 }
+
+export const getCollectionNfts = async (
+  collection: string
+): Promise<ApiNft[]> => {
+  let requestUrl = `${getApiUrl()}/collections/${collection}/nfts?size=10000`;
+  const response = await fetch(requestUrl);
+  if (!response.ok) {
+    throw new Error("Failed to fetch NFTs");
+  }
+  return response.json();
+};
+
+
+export const getNftById = async (identifier: string): Promise<ApiNft> => {
+  const response = await fetch(`${getApiUrl()}/nfts/${identifier}`);
+  if (!response.ok) {
+    throw new Error("Failed to fetch NFT");
+  }
+  return response.json();
+};
 
 export const getTokens = async (identifiers: string[]): Promise<Token[]> => {
     let requestUrl = `${getApiUrl()}/tokens`;
@@ -140,4 +162,34 @@ interface Token {
   ownersHistory: Record<string, unknown>;
   roles: TokenRole[];
   canTransfer: boolean;
+}
+
+export interface PhysicalAssetDetails {
+  width?: number;
+  height?: number;
+  depth?: number;
+  weight?: number;
+  medium?: string;
+  surface?: string;
+  material?: string;
+  technique?: string;
+  baseIncluded?: boolean;
+}
+
+export interface NftAttribute {
+  trait_type: string;
+  value: string;
+}
+
+export interface AiAnalysis {
+  styleRecognition?: string;
+  colorPalette?: string;
+  composition?: {
+    elements?: string;
+    balance?: string;
+    focus?: string;
+    uniqueFeatures?: string;
+    [key: string]: string | undefined; // Allow for additional composition fields
+  };
+  [key: string]: any; // Allow for additional top-level AI analysis fields
 }
