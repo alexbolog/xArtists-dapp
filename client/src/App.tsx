@@ -18,6 +18,7 @@ import Governance from "@/pages/governance";
 import Proposal from "@/pages/proposal";
 import Stake from "@/pages/stake";
 import NotFound from "@/pages/not-found";
+import FaucetPage from "@/pages/faucet";
 import { getChainId } from "./contracts/config";
 
 function Router() {
@@ -41,6 +42,7 @@ function Router() {
             path="/unlock"
             component={() => <UnlockPage loginRoute={"/"} />}
           />
+          <Route path="/faucet" component={FaucetPage} />
           <Route component={NotFound} />
         </Switch>
       </Layout>

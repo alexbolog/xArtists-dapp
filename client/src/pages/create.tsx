@@ -145,14 +145,14 @@ export default function Create() {
   // Add early return if not logged in
   if (!isLoggedIn) {
     return (
-      <div className="max-w-2xl mx-auto text-center">
-        <h1 className="text-3xl font-bold mb-8">Create NFT</h1>
-        <Card className="p-6">
-          <p className="mb-4">Please connect your wallet to create NFTs</p>
-          <Button onClick={() => setLocation("/unlock")}>
-            Connect Wallet
-          </Button>
-        </Card>
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+        <h1 className="text-2xl font-bold text-center">
+          Connect to create NFTs
+        </h1>
+        <p className="text-muted-foreground text-center mb-4">
+          You need to connect your wallet to create NFTs.
+        </p>
+        <Button onClick={() => setLocation("/unlock")}>Connect Wallet</Button>
       </div>
     );
   }
