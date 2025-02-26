@@ -3,7 +3,11 @@ import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
-import { insertArtworkSchema, physicalArtworkTypes, ArtworkType } from "@shared/schema";
+import {
+  insertArtworkSchema,
+  physicalArtworkTypes,
+  ArtworkType,
+} from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -27,6 +31,7 @@ import {
 import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Upload, Image, Sparkles } from "lucide-react";
+import { z } from "zod";
 
 export default function Create() {
   const [, setLocation] = useLocation();
@@ -34,8 +39,9 @@ export default function Create() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [hasPhysicalAsset, setHasPhysicalAsset] = useState(false);
   const [showAiAnalysis, setShowAiAnalysis] = useState(false);
+  const [imageBase64, setImageBase64] = useState<string | null>(null);
 
-  const form = useForm({
+  const form = useForm<z.infer<typeof insertArtworkSchema>>({
     resolver: zodResolver(insertArtworkSchema),
     defaultValues: {
       title: "",
@@ -47,6 +53,8 @@ export default function Create() {
       artworkType: undefined,
       physicalAssetDetails: undefined,
     },
+    shouldUnregister: false,
+    mode: "onSubmit",
   });
 
   const createArtwork = useMutation({
@@ -74,16 +82,17 @@ export default function Create() {
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      // For demo, we'll use a sample image URL
-      // In production, you'd upload to a storage service
-      const sampleUrls = [
-        "https://images.unsplash.com/photo-1734552452939-7d9630889748",
-        "https://images.unsplash.com/photo-1734623044339-e8d370c1a0e1",
-        "https://images.unsplash.com/photo-1737309150415-eaa7564b9e07"
-      ];
-      const randomUrl = sampleUrls[Math.floor(Math.random() * sampleUrls.length)];
+      // Create URL for preview
       setPreviewUrl(URL.createObjectURL(file));
-      form.setValue("imageUrl", randomUrl);
+
+      // Convert to base64
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result as string;
+        setImageBase64(base64String);
+        form.setValue("imageUrl", base64String);
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -98,10 +107,22 @@ export default function Create() {
 
   const handleArtworkTypeChange = (type: ArtworkType) => {
     form.setValue("artworkType", type);
-    form.setValue("physicalAssetDetails", undefined);
+    form.setValue("physicalAssetDetails", {});
   };
 
   const selectedType = form.watch("artworkType");
+
+  const handleSubmit = async (data: any) => {
+    console.log({
+      ...data,
+      imageBase64: "data:image/png;base64,<BASE64aici>",
+      imageUrl: null
+    });
+    // await createArtwork.mutate({
+    //   ...data,
+    //   imageUrl: imageBase64,
+    // });
+  };
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -110,7 +131,7 @@ export default function Create() {
       <Card className="p-6">
         <Form {...form}>
           <form
-            onSubmit={form.handleSubmit((data) => createArtwork.mutate(data))}
+            onSubmit={form.handleSubmit(handleSubmit)}
             className="space-y-6"
           >
             <div className="mb-6">
@@ -127,6 +148,7 @@ export default function Create() {
                     className="absolute bottom-4 right-4"
                     onClick={() => {
                       setPreviewUrl(null);
+                      setImageBase64(null);
                       form.setValue("imageUrl", "");
                     }}
                   >
@@ -228,11 +250,13 @@ export default function Create() {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {Object.entries(physicalArtworkTypes).map(([value, type]) => (
-                            <SelectItem key={value} value={value}>
-                              {type.name}
-                            </SelectItem>
-                          ))}
+                          {Object.entries(physicalArtworkTypes).map(
+                            ([value, type]) => (
+                              <SelectItem key={value} value={value}>
+                                {type.name}
+                              </SelectItem>
+                            )
+                          )}
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -243,7 +267,9 @@ export default function Create() {
                 {selectedType && (
                   <div className="space-y-4 border rounded-lg p-4 bg-muted/50">
                     <h3 className="font-medium">Physical Details</h3>
-                    {Object.entries(physicalArtworkTypes[selectedType].metadata.shape).map(([key, value]) => (
+                    {Object.entries(
+                      physicalArtworkTypes[selectedType].metadata.shape
+                    ).map(([key, value]) => (
                       <FormField
                         key={key}
                         control={form.control}
@@ -253,14 +279,25 @@ export default function Create() {
                             <FormLabel>{value.description}</FormLabel>
                             <FormControl>
                               <Input
-                                type={value.typeName === "number" ? "number" : "text"}
+                                type={
+                                  value.typeName === "number"
+                                    ? "number"
+                                    : "text"
+                                }
                                 placeholder={value.description}
+                                step="any"
                                 {...field}
+                                value={field.value ?? ""}
                                 onChange={(e) => {
-                                  const val = value.typeName === "number"
-                                    ? parseFloat(e.target.value)
-                                    : e.target.value;
-                                  field.onChange(val);
+                                  if (value.typeName === "number") {
+                                    field.onChange(
+                                      e.target.value === ""
+                                        ? undefined
+                                        : e.target.valueAsNumber
+                                    );
+                                  } else {
+                                    field.onChange(e.target.value);
+                                  }
                                 }}
                               />
                             </FormControl>
@@ -298,24 +335,46 @@ export default function Create() {
           <div className="mt-8 p-6 rounded-lg bg-purple-500/10 border border-purple-500/20">
             <div className="flex items-center gap-2 mb-4">
               <Sparkles className="h-5 w-5 text-purple-500" />
-              <h3 className="text-lg font-semibold text-purple-500">AI Analysis</h3>
+              <h3 className="text-lg font-semibold text-purple-500">
+                AI Analysis
+              </h3>
             </div>
             <div className="space-y-4">
               <div>
-                <h4 className="text-sm font-medium text-purple-500/80 mb-1">Style Recognition</h4>
-                <p className="text-sm">Contemporary abstract expressionism with influences from digital art movements</p>
+                <h4 className="text-sm font-medium text-purple-500/80 mb-1">
+                  Style Recognition
+                </h4>
+                <p className="text-sm">
+                  Contemporary abstract expressionism with influences from
+                  digital art movements
+                </p>
               </div>
               <div>
-                <h4 className="text-sm font-medium text-purple-500/80 mb-1">Color Palette</h4>
-                <p className="text-sm">Dominated by vibrant blues and warm earth tones, creating a balanced composition</p>
+                <h4 className="text-sm font-medium text-purple-500/80 mb-1">
+                  Color Palette
+                </h4>
+                <p className="text-sm">
+                  Dominated by vibrant blues and warm earth tones, creating a
+                  balanced composition
+                </p>
               </div>
               <div>
-                <h4 className="text-sm font-medium text-purple-500/80 mb-1">Composition Analysis</h4>
-                <p className="text-sm">Strong diagonal elements with a central focal point, following the rule of thirds</p>
+                <h4 className="text-sm font-medium text-purple-500/80 mb-1">
+                  Composition Analysis
+                </h4>
+                <p className="text-sm">
+                  Strong diagonal elements with a central focal point, following
+                  the rule of thirds
+                </p>
               </div>
               <div>
-                <h4 className="text-sm font-medium text-purple-500/80 mb-1">Unique Features</h4>
-                <p className="text-sm">Distinctive brushwork technique and innovative use of negative space</p>
+                <h4 className="text-sm font-medium text-purple-500/80 mb-1">
+                  Unique Features
+                </h4>
+                <p className="text-sm">
+                  Distinctive brushwork technique and innovative use of negative
+                  space
+                </p>
               </div>
             </div>
           </div>
