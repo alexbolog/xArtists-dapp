@@ -13,14 +13,14 @@ import { getNftById } from "@/api/mvx";
 import { mapNftToArtwork } from "@/utils";
 import type { ApiNft } from "@/api/mvx";
 import type { Artwork } from "@shared/schema";
-import { getDemoCollectionTokenId } from "@/contracts/config";
+import { getDemoCollectionTokenId, TRO_TOKEN_ID } from "@/contracts/config";
 import { extractAiAnalysis } from "@/utils";
 import useDemoNftMinter from "@/contracts/hooks/useDemoNftMinter";
 import BigNumber from "bignumber.js";
 
 export default function ArtworkPage() {
   const { id } = useParams();
-  const { getNftPrice } = useDemoNftMinter();
+  const { getNftPrice, buyNft } = useDemoNftMinter();
 
   const nonceToHex = (nonce: number) => {
     let nonceHex = `${nonce.toString(16)}`;
@@ -87,9 +87,20 @@ export default function ArtworkPage() {
 
   // Update sale info to use actual price data
   const saleInfo = {
-    isForSale: priceData !== null,
+    isForSale:
+      priceData?.amount !== null &&
+      priceData?.amount !== "0" &&
+      priceData?.amount !== undefined,
     price: priceData?.amount || null,
     // lastSoldPrice: "0", // Keep this as is or remove if not needed
+  };
+
+  const handleBuyNft = async (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+    const nonce = parseInt(id || "0");
+    const price = priceData?.amount || "0";
+
+    await buyNft(nonce, TRO_TOKEN_ID, price);
   };
 
   return (
@@ -124,6 +135,7 @@ export default function ArtworkPage() {
               size="lg"
               variant="default"
               className="gap-2 bg-green-500 hover:bg-green-600"
+              onClick={handleBuyNft}
             >
               <ShoppingCart className="h-5 w-5" />
               Buy for {new BigNumber(priceData?.amount || "0").shiftedBy(-18).toString()} TRO

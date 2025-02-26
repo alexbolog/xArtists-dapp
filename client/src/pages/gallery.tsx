@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
 import {
@@ -29,8 +29,6 @@ import useDemoNftMinter from "@/contracts/hooks/useDemoNftMinter";
 
 export default function Gallery() {
   const [search, setSearch] = useState("");
-  const [sort, setSort] = useState("votes");
-  const [filteredArtworks, setFilteredArtworks] = useState<Artwork[]>([]);
   const { getNftsForSaleMap } = useDemoNftMinter();
 
   const { data: apiNfts, isLoading } = useQuery<ApiNft[]>({
@@ -48,31 +46,21 @@ export default function Gallery() {
     mapNftToArtwork(nft, priceMap?.[nft.nonce.toString()])
   );
 
-  useEffect(() => {
-    if (!artworks) return;
+  // Calculate filtered artworks directly in the render
+  const filteredArtworks = useMemo(() => {
+    if (!artworks) return [];
 
-    let sorted = [...artworks];
+    if (!search) return artworks;
 
-    if (search) {
-      sorted = sorted.filter(
-        (artwork) =>
-          artwork.title.toLowerCase().includes(search.toLowerCase()) ||
-          artwork.description?.toLowerCase().includes(search.toLowerCase()) ||
-          artwork.artist.toLowerCase().includes(search.toLowerCase())
-      );
-    }
+    return artworks.filter(
+      (artwork) =>
+        artwork.title.toLowerCase().includes(search.toLowerCase()) ||
+        artwork.description?.toLowerCase().includes(search.toLowerCase()) ||
+        artwork.artist.toLowerCase().includes(search.toLowerCase())
+    );
+  }, [artworks, search]);
 
-    // Apply sorting
-    // switch (sort) {
-    //   case "recent":
-    //     sorted.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-    //     break;
-    // }
-
-    setFilteredArtworks(sorted);
-  }, [artworks, search, sort]);
-
-  const artworksForSale = artworks || [];
+  const artworksForSale = artworks?.filter((artwork) => artwork.price !== null) || [];
 
   return (
     <div>

@@ -6,6 +6,9 @@ import ApiNftArtworkCard from "@/components/api-nft-artwork-card";
 import { getCollectionNfts } from "@/api/mvx";
 import { getDemoCollectionTokenId } from "@/contracts/config";
 import type { ApiNft } from "@/api/mvx";
+import ArtworkCard from "@/components/artwork-card";
+import { mapNftToArtwork } from "@/utils";
+import useDemoNftMinter from "@/contracts/hooks/useDemoNftMinter";
 
 function Hero() {
   return (
@@ -36,10 +39,22 @@ function Hero() {
 }
 
 export default function Home() {
-  const { data: nfts, isLoading } = useQuery<ApiNft[]>({
+  const { getNftsForSaleMap } = useDemoNftMinter();
+
+  const { data: apiNfts, isLoading } = useQuery<ApiNft[]>({
     queryKey: ["collection-nfts"],
     queryFn: () => getCollectionNfts(getDemoCollectionTokenId()),
   });
+
+  const { data: priceMap } = useQuery<Record<string, string>>({
+    queryKey: ["nfts-price-map"],
+    queryFn: () => getNftsForSaleMap(),
+  });
+
+  // Transform ApiNft[] to Artwork[] with prices
+  const artworks = apiNfts?.map((nft) => 
+    mapNftToArtwork(nft, priceMap?.[nft.nonce.toString()])
+  );
 
   return (
     <div>
@@ -67,8 +82,8 @@ export default function Home() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {nfts?.slice(0, 3).map((nft) => (
-              <ApiNftArtworkCard key={nft.identifier} apiNft={nft} />
+            {artworks?.slice(0, 3).map((artwork) => (
+              <ArtworkCard key={artwork.id} artwork={artwork} />
             ))}
           </div>
         )}

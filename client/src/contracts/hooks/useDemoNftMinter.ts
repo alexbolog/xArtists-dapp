@@ -1,8 +1,13 @@
 import useContract from "./useContract";
 import abi from "../abis/demo-only-nft-minter.abi.json";
-import { AbiRegistry, Address, TokenTransfer } from "@multiversx/sdk-core/out";
+import {
+  AbiRegistry,
+  Address,
+  Token,
+  TokenTransfer,
+} from "@multiversx/sdk-core/out";
 import { BigNumber } from "bignumber.js";
-import { getContractAddress } from "../config";
+import { getContractAddress, TRO_TOKEN_ID } from "../config";
 import { CreateNftArgs, NftForSale, OptionalPriceTag } from "../types";
 
 const DEFAULT_GAS_LIMIT = 25_000_000;
@@ -70,7 +75,15 @@ const useDemoNftMinter = () => {
     return handleSendTransaction(interaction);
   };
 
-  const buyNft = async (nftNonce: number, payment?: TokenTransfer) => {
+  const buyNft = async (
+    nftNonce: number,
+    paymentToken: string,
+    paymentAmount: string
+  ) => {
+    const payment = new TokenTransfer({
+      token: new Token({ identifier: paymentToken }),
+      amount: BigInt(paymentAmount),
+    });
     const contract = getDemoNftMinterContract();
     const interaction = contract.methods
       .buyNft([nftNonce])
