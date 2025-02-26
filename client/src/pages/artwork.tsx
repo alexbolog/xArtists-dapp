@@ -46,7 +46,14 @@ export default function ArtworkPage() {
   }
 
   if (!nft) {
-    return <div>Artwork not found</div>;
+    return (
+      <div className="flex flex-col items-center justify-center gap-4 py-12">
+        <h2 className="text-2xl font-semibold text-muted-foreground">Artwork not found</h2>
+        <Button variant="outline" onClick={() => window.location.href = '/gallery'}>
+          Return to Gallery
+        </Button>
+      </div>
+    );
   }
 
   const artwork: Artwork = mapNftToArtwork(nft);
