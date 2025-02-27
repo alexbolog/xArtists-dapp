@@ -35,6 +35,7 @@ import { z } from "zod";
 import useDemoNftMinter from "@/contracts/hooks/useDemoNftMinter";
 import { TRO_TOKEN_ID } from "@/contracts/config";
 import { useGetLoginInfo } from "@multiversx/sdk-dapp/hooks";
+import { getIpfsCIDs } from "@/api/internal";
 
 export default function Create() {
   const [, setLocation] = useLocation();
@@ -119,27 +120,30 @@ export default function Create() {
   const selectedType = form.watch("artworkType");
 
   const handleSubmit = async (data: any) => {
-    console.log({
+    const request = {
       ...data,
       imageBase64,
       imageUrl: null,
-    });
+    };
+    console.log(request);
 
+    const res = await getIpfsCIDs(request);
+    console.log(res);
     // TODO: add backend call here
     // TODO: add send mint transaction here
 
-    await createNft({
-      name: "test",
-      royalties: "0",
-      attributes:
-        "tags:xArtists,AIMegaWaveHackathon;metadata:bafkreibngetnjgfzrq2ovxw7ek745rk6vz34y23yxjau3qgpxcwltvdq7a",
-      asset_uri:
-        "https://ipfs.io/ipfs/QmPano8fKhpKaykrCGAZ2LYEYmFV5c1dpdeThXdN54a8HZ",
-      metadata_uri:
-        "https://ipfs.io/ipfs/bafkreibngetnjgfzrq2ovxw7ek745rk6vz34y23yxjau3qgpxcwltvdq7a",
-      selling_price: "1234000000000000000",
-      opt_token_used_as_payment: TRO_TOKEN_ID,
-    });
+    // await createNft({
+    //   name: "test",
+    //   royalties: "0",
+    //   attributes:
+    //     "tags:xArtists,AIMegaWaveHackathon;metadata:bafkreibngetnjgfzrq2ovxw7ek745rk6vz34y23yxjau3qgpxcwltvdq7a",
+    //   asset_uri:
+    //     "https://ipfs.io/ipfs/QmPano8fKhpKaykrCGAZ2LYEYmFV5c1dpdeThXdN54a8HZ",
+    //   metadata_uri:
+    //     "https://ipfs.io/ipfs/bafkreibngetnjgfzrq2ovxw7ek745rk6vz34y23yxjau3qgpxcwltvdq7a",
+    //   selling_price: "1234000000000000000",
+    //   opt_token_used_as_payment: TRO_TOKEN_ID,
+    // });
   };
 
   // Add early return if not logged in
