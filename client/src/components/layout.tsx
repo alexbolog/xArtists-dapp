@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Palette, Image, UserCircle, LightbulbIcon, Coins, Menu, CircleDollarSign } from "lucide-react";
+import { Palette, Image, UserCircle, LightbulbIcon, Coins, Menu, CircleDollarSign, Brush, Handshake } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -39,9 +39,11 @@ const NAV_ITEMS = [
   { href: "/", icon: <Image className="h-4 w-4" />, label: "Home" },
   { href: "/gallery", icon: <Palette className="h-4 w-4" />, label: "Gallery" },
   { href: "/create", icon: <Image className="h-4 w-4" />, label: "Create NFT" },
+  { href: "/physical-art", icon: <Brush className="h-4 w-4" />, label: "Physical Art" },
   { href: "/stake", icon: <Coins className="h-4 w-4" />, label: "Stake" },
   { href: "/governance", icon: <LightbulbIcon className="h-4 w-4" />, label: "Governance" },
   { href: "/faucet", icon: <CircleDollarSign className="h-4 w-4" />, label: "Faucet" },
+  { href: "/escrow", icon: <Handshake className="h-4 w-4" />, label: "Escrow" },
   // { href: "/profile", icon: <UserCircle className="h-4 w-4" />, label: "Profile" },
 ];
 

@@ -1,11 +1,11 @@
 import { getApiUrl } from "@/contracts/config";
 
 export interface ApiNftMedia {
-    url: string;
-    originalUrl: string;
-    thumbnailUrl: string;
-    fileType: string;
-    fileSize: number;
+  url: string;
+  originalUrl: string;
+  thumbnailUrl: string;
+  fileType: string;
+  fileSize: number;
 }
 
 export interface ApiNftMetadata {
@@ -15,37 +15,43 @@ export interface ApiNftMetadata {
 }
 
 export interface ApiNft {
-    identifier: string;
-    collection: string;
-    attributes: string;
-    nonce: number;
-    type: string;
-    subType: string;
-    name: string;
-    creator: string;
-    royalties: number;
-    uris: string[];
-    url: string;
-    media: ApiNftMedia[];
-    isWhitelistedStorage: boolean;
-    tags: string[];
-    metadata: ApiNftMetadata;
-    balance: string;
-    ticker: string;
-    unstakingTimestamp?: number;
+  identifier: string;
+  collection: string;
+  attributes: string;
+  nonce: number;
+  type: string;
+  subType: string;
+  name: string;
+  creator: string;
+  royalties: number;
+  uris: string[];
+  url: string;
+  media: ApiNftMedia[];
+  isWhitelistedStorage: boolean;
+  tags: string[];
+  metadata: ApiNftMetadata;
+  balance: string;
+  ticker: string;
+  unstakingTimestamp?: number;
 }
 
-export const getAccountNfts = async (address: string, identifiers?: string[]): Promise<ApiNft[]> => {
-    let requestUrl = `${getApiUrl()}/accounts/${address}/nfts`;
-    if (identifiers) {
-        requestUrl += `?identifiers=${identifiers.join(',')}`;
-    }
-    const response = await fetch(requestUrl);
-    if (!response.ok) {
-        throw new Error("Failed to fetch NFTs");
-    }
-    return response.json();
-}
+export const getAccountNfts = async (
+  address: string,
+  identifiers?: string[],
+  size?: number
+): Promise<ApiNft[]> => {
+  let requestUrl = `${getApiUrl()}/accounts/${address}/nfts?size=${
+    size ?? 10000
+  }`;
+  if (identifiers) {
+    requestUrl += `&identifiers=${identifiers.join(",")}`;
+  }
+  const response = await fetch(requestUrl);
+  if (!response.ok) {
+    throw new Error("Failed to fetch NFTs");
+  }
+  return response.json();
+};
 
 export const getCollectionNfts = async (
   collection: string
@@ -58,7 +64,6 @@ export const getCollectionNfts = async (
   return response.json();
 };
 
-
 export const getNftById = async (identifier: string): Promise<ApiNft> => {
   const response = await fetch(`${getApiUrl()}/nfts/${identifier}`);
   if (!response.ok) {
@@ -68,28 +73,30 @@ export const getNftById = async (identifier: string): Promise<ApiNft> => {
 };
 
 export const getTokens = async (identifiers: string[]): Promise<Token[]> => {
-    let requestUrl = `${getApiUrl()}/tokens`;
-    if (identifiers) {
-        requestUrl += `?identifiers=${identifiers.join(',')}`;
-    }
-    const response = await fetch(requestUrl);
-    if (!response.ok) {
-        throw new Error("Failed to fetch tokens");
-    }
-    return response.json();
-}
+  let requestUrl = `${getApiUrl()}/tokens`;
+  if (identifiers) {
+    requestUrl += `?identifiers=${identifiers.join(",")}`;
+  }
+  const response = await fetch(requestUrl);
+  if (!response.ok) {
+    throw new Error("Failed to fetch tokens");
+  }
+  return response.json();
+};
 
-export const getTokenSupply = async (identifier: string): Promise<TokenSupply> => {
-    const response = await fetch(`${getApiUrl()}/tokens/${identifier}/supply`);
-    if (!response.ok) {
-        throw new Error("Failed to fetch token supply");
-    }
-    return response.json();
-}
+export const getTokenSupply = async (
+  identifier: string
+): Promise<TokenSupply> => {
+  const response = await fetch(`${getApiUrl()}/tokens/${identifier}/supply`);
+  if (!response.ok) {
+    throw new Error("Failed to fetch token supply");
+  }
+  return response.json();
+};
 
 export interface TokenSupply {
-    circulatingSupply: string;
-    totalSupply: string;
+  circulatingSupply: string;
+  totalSupply: string;
 }
 
 interface TokenAssets {
