@@ -65,11 +65,30 @@ export const getCollectionNfts = async (
 };
 
 export const getNftById = async (identifier: string): Promise<ApiNft> => {
-  const response = await fetch(`${getApiUrl()}/nfts/${identifier}`);
+  let response = await fetch(`${getApiUrl()}/nfts/${identifier}`);
   if (!response.ok) {
     throw new Error("Failed to fetch NFT");
   }
-  return response.json();
+  const nft = await response.json();
+  nft.metadata = await getValidMetadata(nft);
+  console.log("NFT", nft);
+  return nft;
+};
+
+const getValidMetadata = async (nft: ApiNft) => {
+  try {
+    const metadataCid = Buffer.from(nft.attributes, "base64")
+      .toString("utf-8")
+      .split(";")
+      .filter((attr) => attr.startsWith("metadata"))[0]
+      .split(":")[1];
+    const metadataJsonUri = `https://ipfs.io/ipfs/${metadataCid}`;
+    const metadataJson = await fetch(metadataJsonUri).then((res) => res.json());
+    return metadataJson;
+  } catch (err) {
+    console.warn(`Failed to fetch metadata for NFT ${nft.identifier}`, err);
+    return {};
+  }
 };
 
 export const getTokens = async (identifiers: string[]): Promise<Token[]> => {

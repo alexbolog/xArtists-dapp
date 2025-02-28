@@ -11,6 +11,7 @@ import SimpleApiNftArtworkCard from "@/components/simple-api-nft-artwork-card";
 import useDemoEscrowContract from "@/contracts/hooks/useDemoEscrowContract";
 import { getContractAddress } from "@/contracts/config";
 import { Badge } from "@/components/ui/badge";
+import { uploadNewImage } from "@/api/internal";
 
 export function EscrowPage() {
   const { address } = useGetAccountInfo();
@@ -18,7 +19,9 @@ export function EscrowPage() {
   const { lock, getStatus } = useDemoEscrowContract();
   const [selectedNft, setSelectedNft] = useState<string | null>(null);
 
-  const [uploadedImages, setUploadedImages] = useState<{ [key: string]: string }>({});
+  const [uploadedImages, setUploadedImages] = useState<{
+    [key: string]: string;
+  }>({});
 
   const { data: walletNftsData, isLoading } = useQuery<ApiNft[]>({
     queryKey: [`/api/users/${address}/nfts`, "wallet", address],
@@ -81,7 +84,6 @@ export function EscrowPage() {
     await lock(identifier, nonce);
   };
 
-  
   // Add this mock data near the top of the component
   const mockPendingOrders = [
     {
@@ -118,14 +120,25 @@ export function EscrowPage() {
       reader.onload = () => {
         const base64String = reader.result as string;
         console.log(`Image uploaded for NFT ${nftIdentifier}:`, base64String);
-        setUploadedImages(prev => ({
+        setUploadedImages((prev) => ({
           ...prev,
-          [nftIdentifier]: base64String
+          [nftIdentifier]: base64String,
         }));
       };
     } catch (error) {
       console.error("Error uploading image:", error);
     }
+  };
+
+  const handleSubmitNewImage = async (
+    e: React.MouseEvent<HTMLButtonElement>,
+    nftIdentifier: string
+  ) => {
+    e.preventDefault();
+    console.log("Submitting new image for NFT:", nftIdentifier);
+    console.log("Uploaded images:", uploadedImages[nftIdentifier]);
+
+    await uploadNewImage(nftIdentifier, uploadedImages[nftIdentifier]);
   };
 
   return (
@@ -153,7 +166,10 @@ export function EscrowPage() {
                       <div className="flex items-center gap-2 md:gap-4">
                         <div className="relative">
                           <img
-                            src={nft.url || `https://picsum.photos/seed/${nft.identifier}/100/100`}
+                            src={
+                              nft.url ||
+                              `https://picsum.photos/seed/${nft.identifier}/100/100`
+                            }
                             alt={`NFT ${nft.identifier}`}
                             className="w-12 h-12 md:w-16 md:h-16 rounded-lg object-cover"
                           />
@@ -180,7 +196,7 @@ export function EscrowPage() {
                               size="sm"
                               className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0"
                               onClick={() => {
-                                setUploadedImages(prev => {
+                                setUploadedImages((prev) => {
                                   const newImages = { ...prev };
                                   delete newImages[nft.identifier];
                                   return newImages;
@@ -193,21 +209,23 @@ export function EscrowPage() {
                           <Button
                             variant="default"
                             size="sm"
-                            onClick={() => {
-                              console.log("Submitting image for NFT:", nft.identifier);
-                              console.log("Image data:", uploadedImages[nft.identifier]);
-                            }}
+                            onClick={(e) =>
+                              handleSubmitNewImage(e, nft.identifier)
+                            }
                           >
                             Submit
                           </Button>
                         </div>
                       ) : (
-                        <Button 
-                          variant="outline" 
+                        <Button
+                          variant="outline"
                           size="sm"
                           onClick={() => {
                             if (fileInputRef.current) {
-                              fileInputRef.current.setAttribute('data-nft-id', nft.identifier);
+                              fileInputRef.current.setAttribute(
+                                "data-nft-id",
+                                nft.identifier
+                              );
                               fileInputRef.current.click();
                             }
                           }}
@@ -245,19 +263,25 @@ export function EscrowPage() {
                       <h3 className="font-semibold">
                         {order.firstName} {order.lastName}
                       </h3>
-                      <Badge 
-                        variant={order.status === "pending" ? "default" : "secondary"}
+                      <Badge
+                        variant={
+                          order.status === "pending" ? "default" : "secondary"
+                        }
                         className={
-                          order.status === "pending" 
-                            ? "bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20" 
+                          order.status === "pending"
+                            ? "bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20"
                             : "bg-blue-500/10 text-blue-500 hover:bg-blue-500/20"
                         }
                       >
                         {order.status}
                       </Badge>
                     </div>
-                    <p className="text-sm text-muted-foreground">{order.address}</p>
-                    <p className="text-xs text-muted-foreground">Tag ID: {order.id}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {order.address}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Tag ID: {order.id}
+                    </p>
                   </div>
                   <Button variant="outline" size="sm">
                     Mark as Sent
@@ -276,7 +300,8 @@ export function EscrowPage() {
           accept="image/*"
           onChange={(e) => {
             const file = e.target.files?.[0];
-            const nftIdentifier = fileInputRef.current?.getAttribute('data-nft-id');
+            const nftIdentifier =
+              fileInputRef.current?.getAttribute("data-nft-id");
             if (file && nftIdentifier) {
               handleImageUpload(nftIdentifier, file);
             }

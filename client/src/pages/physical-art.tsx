@@ -11,6 +11,13 @@ import useDemoEscrowContract from "@/contracts/hooks/useDemoEscrowContract";
 import { Input } from "@/components/ui/input";
 import SimpleApiNftArtworkCard from "@/components/simple-api-nft-artwork-card";
 import { Badge } from "@/components/ui/badge";
+import { Link } from "wouter";
+import { ArrowRight } from "lucide-react";
+import { getCollectionNfts } from "@/api/mvx";
+import { getDemoCollectionTokenId } from "@/contracts/config";
+import ArtworkCard from "@/components/artwork-card";
+import { mapNftToArtwork } from "@/utils";
+import useDemoNftMinter from "@/contracts/hooks/useDemoNftMinter";
 
 interface ShippingDetails {
   name: string;
@@ -77,6 +84,26 @@ export default function PhysicalArt() {
     walletNftsData?.filter((nft) =>
       nft.tags.includes("TokenizedPhysicalArtwork")
     ) || [];
+
+  const { getNftsForSaleMap } = useDemoNftMinter();
+
+  const { data: collectionNfts } = useQuery<ApiNft[]>({
+    queryKey: ["collection-nfts"],
+    queryFn: () => getCollectionNfts(getDemoCollectionTokenId()),
+  });
+
+  const { data: priceMap } = useQuery<Record<string, string>>({
+    queryKey: ["nfts-price-map"],
+    queryFn: () => getNftsForSaleMap(),
+  });
+
+  // Transform ApiNft[] to Artwork[] with prices
+  const artworksForSale = collectionNfts
+    ?.map((nft) => mapNftToArtwork(nft, priceMap?.[nft.nonce.toString()]))
+    .filter((artwork) => 
+      artwork.price !== null && 
+      artwork.hasPhysicalAsset
+    );
 
   const handleLockNft = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
@@ -171,29 +198,50 @@ export default function PhysicalArt() {
                 <div className="h-48 bg-muted rounded-lg" />
                 <div className="h-48 bg-muted rounded-lg" />
               </div>
-            ) : (
+            ) : physicalNfts.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {physicalNfts.length > 0 ? (
-                  physicalNfts.map((nft) => (
-                    <div
-                      key={nft.identifier}
-                      className={`cursor-pointer transition-all ${
-                        selectedNft === nft.identifier
-                          ? "bg-muted/50 shadow-[0_0_15px_rgba(var(--primary),.25)] scale-[1.02]"
-                          : "hover:bg-muted/25"
-                      }`}
-                      onClick={() =>
-                        setSelectedNft((prev) =>
-                          prev === nft.identifier ? null : nft.identifier
-                        )
-                      }
-                    >
-                      <SimpleApiNftArtworkCard apiNft={nft} />
+                {physicalNfts.map((nft) => (
+                  <div
+                    key={nft.identifier}
+                    className={`cursor-pointer transition-all ${
+                      selectedNft === nft.identifier
+                        ? "bg-muted/50 shadow-[0_0_15px_rgba(var(--primary),.25)] scale-[1.02]"
+                        : "hover:bg-muted/25"
+                    }`}
+                    onClick={() =>
+                      setSelectedNft((prev) =>
+                        prev === nft.identifier ? null : nft.identifier
+                      )
+                    }
+                  >
+                    <SimpleApiNftArtworkCard apiNft={nft} />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="space-y-8">
+                <div className="text-center py-8 text-muted-foreground">
+                  {artworksForSale && artworksForSale.length > 0 ? (
+                    <p>You don't have any NFTs with claimable physical artwork. Browse the available artworks below.</p>
+                  ) : (
+                    <p>You don't have any NFTs with claimable physical artwork. Check back soon for new listings.</p>
+                  )}
+                </div>
+                {artworksForSale && artworksForSale.length > 0 && (
+                  <div className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {artworksForSale.slice(0, 3).map((artwork) => (
+                        <ArtworkCard key={artwork.id} artwork={artwork} />
+                      ))}
                     </div>
-                  ))
-                ) : (
-                  <div className="col-span-full text-center py-8 text-muted-foreground">
-                    <p>No physical NFTs found in your wallet</p>
+                    <div className="flex justify-center">
+                      <Link href="/gallery">
+                        <Button variant="ghost" className="gap-2">
+                          View All
+                          <ArrowRight className="h-4 w-4" />
+                        </Button>
+                      </Link>
+                    </div>
                   </div>
                 )}
               </div>
