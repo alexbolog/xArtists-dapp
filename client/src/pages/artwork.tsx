@@ -8,6 +8,8 @@ import {
   ShoppingCart,
   Send,
   ExternalLink,
+  Clock,
+  ChevronDown,
 } from "lucide-react";
 import { getNftById } from "@/api/mvx";
 import { mapNftToArtwork } from "@/utils";
@@ -17,6 +19,11 @@ import { getDemoCollectionTokenId, TRO_TOKEN_ID } from "@/contracts/config";
 import { extractAiAnalysis } from "@/utils";
 import useDemoNftMinter from "@/contracts/hooks/useDemoNftMinter";
 import BigNumber from "bignumber.js";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 
 export default function ArtworkPage() {
   const { id } = useParams();
@@ -55,7 +62,7 @@ export default function ArtworkPage() {
   });
 
   const aiAnalysis = nft ? extractAiAnalysis(nft) : null;
-
+  console.log("AI ANALYSIS", aiAnalysis);
   if (isLoadingNft || isLoadingPrice) {
     return (
       <div className="animate-pulse">
@@ -138,7 +145,11 @@ export default function ArtworkPage() {
               onClick={handleBuyNft}
             >
               <ShoppingCart className="h-5 w-5" />
-              Buy for {new BigNumber(priceData?.amount || "0").shiftedBy(-18).toString()} TRO
+              Buy for{" "}
+              {new BigNumber(priceData?.amount || "0")
+                .shiftedBy(-18)
+                .toString()}{" "}
+              TRO
             </Button>
           ) : (
             <Button size="lg" variant="outline" className="gap-2">
@@ -263,6 +274,65 @@ export default function ArtworkPage() {
           </div>
         </div>
       )}
+
+      {aiAnalysis &&
+        aiAnalysis.assessments &&
+        aiAnalysis.assessments.length > 0 && (
+          <div className="mt-8 p-6 rounded-lg bg-purple-500/10 border border-purple-500/20">
+            <div className="flex items-center gap-2 mb-4">
+              <Clock className="h-5 w-5 text-purple-500" />
+              <h3 className="text-lg font-semibold text-purple-500">
+                Quality Assessment History
+              </h3>
+            </div>
+            <div className="space-y-4">
+              {aiAnalysis.assessments.map((assessment: any, _index: number) => (
+                <Collapsible
+                  key={assessment.timestamp}
+                  className="border-l-2 border-purple-500/20 pl-4"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-purple-500/80">
+                          {assessment.timestamp === 0
+                            ? "Initial Assessment"
+                            : new Date(
+                                assessment.timestamp * 1000
+                              ).toLocaleDateString()}
+                        </span>
+                        <div className="flex items-center gap-1">
+                          <span className="font-semibold text-lg">
+                            {assessment.score}
+                          </span>
+                          <span className="text-sm text-muted-foreground">
+                            /100
+                          </span>
+                        </div>
+                      </div>
+                      <p className="text-sm text-muted-foreground line-clamp-1">
+                        {assessment.remarks}
+                      </p>
+                    </div>
+                    <CollapsibleTrigger className="p-2 hover:bg-purple-500/10 rounded-full transition-colors">
+                      <ChevronDown className="h-4 w-4" />
+                    </CollapsibleTrigger>
+                  </div>
+                  <CollapsibleContent className="pt-2">
+                    <p className="text-sm">{assessment.remarks}</p>
+                    {assessment.imageUrl && (
+                      <img
+                        src={assessment.imageUrl}
+                        alt={`Artwork state at ${assessment.timestamp}`}
+                        className="mt-2 rounded-md max-w-[300px]"
+                      />
+                    )}
+                  </CollapsibleContent>
+                </Collapsible>
+              ))}
+            </div>
+          </div>
+        )}
     </div>
   );
 }

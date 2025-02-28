@@ -113,7 +113,7 @@ export default function PhysicalArt() {
 
     const parts = selectedNft.split("-");
     const identifier = `${parts[0]}-${parts[1]}`;
-    const nonce = parseInt(parts[2]);
+    const nonce = parseInt(parts[2], 16);
 
     await lock(identifier, nonce);
   };

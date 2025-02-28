@@ -45,6 +45,7 @@
         },
         {
             "name": "update",
+            "onlyOwner": true,
             "mutability": "mutable",
             "inputs": [
                 {
@@ -60,19 +61,11 @@
                     "type": "u64"
                 },
                 {
-                    "name": "hash",
-                    "type": "bytes"
-                },
-                {
                     "name": "new_attributes",
                     "type": "bytes"
                 },
                 {
                     "name": "artwork_uri",
-                    "type": "bytes"
-                },
-                {
-                    "name": "metadata_uri",
                     "type": "bytes"
                 }
             ],
