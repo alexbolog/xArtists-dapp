@@ -1,5 +1,5 @@
 export const getIpfsCIDs = async (data: any) => {
-    const url = 'http://localhost:3001/upload'
+    const url = `${window.location.protocol}//${window.location.host}/upload`
     try {
         const response = await fetch(url, {
             method: 'POST',
@@ -23,7 +23,7 @@ export const getIpfsCIDs = async (data: any) => {
 }
 
 export const uploadNewImage = async (nftIdentifier: string, image: string) => {
-    const url = 'http://localhost:3001/upload/reasess'
+    const url = `${window.location.protocol}//${window.location.host}/upload/reasess`
     try {
         const response = await fetch(url, {
             method: 'POST',

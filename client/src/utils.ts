@@ -165,11 +165,12 @@ export function extractAiAnalysis(nft: ApiNft): AiAnalysis | null {
             typeof attr.value === "number" ? attr.value : parseInt(attr.value);
         } else if (type === "remarks") {
           assessment.remarks = attr.value;
-        } else if (type === "image_url") {
+        } else if (type === "image") {
+          console.log("IMAGE URL", attr.value);
           assessment.imageUrl = attr.value;
         }
-        assessment.imageUrl =
-          "https://devnet-media.elrond.com/nfts/asset/Qmad7j928SbFHVLnC33HjabqyGNcDwq12C2PJ6da8fACR2";
+        // assessment.imageUrl =
+        //   "https://devnet-media.elrond.com/nfts/asset/Qmad7j928SbFHVLnC33HjabqyGNcDwq12C2PJ6da8fACR2";
       }
       // Handle specific fields with their exact names
       else if (key === "color_palette") {
