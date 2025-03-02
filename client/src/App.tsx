@@ -20,6 +20,8 @@ import Stake from "@/pages/stake";
 import NotFound from "@/pages/not-found";
 import FaucetPage from "@/pages/faucet";
 import { getChainId } from "./contracts/config";
+import EscrowPage from './pages/escrow';
+import PhysicalArt from "./pages/physical-art";
 
 function Router() {
   const environment = getChainId() === "D" ? "devnet" : "mainnet";
@@ -38,11 +40,13 @@ function Router() {
           <Route path="/proposal/:id" component={Proposal} />
           <Route path="/profile" component={Profile} />
           <Route path="/stake" component={Stake} />
+          <Route path="/physical-art" component={PhysicalArt} />
           <Route
             path="/unlock"
             component={() => <UnlockPage loginRoute={"/"} />}
           />
           <Route path="/faucet" component={FaucetPage} />
+          <Route path="/escrow" component={EscrowPage} />
           <Route component={NotFound} />
         </Switch>
       </Layout>

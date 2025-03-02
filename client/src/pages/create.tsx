@@ -120,30 +120,34 @@ export default function Create() {
   const selectedType = form.watch("artworkType");
 
   const handleSubmit = async (data: any) => {
-    const request = {
-      ...data,
-      imageBase64,
-      imageUrl: null,
-    };
-    console.log(request);
+    try {
+      const request = {
+        ...data,
+        imageBase64,
+        imageUrl: null,
+      };
 
-    const res = await getIpfsCIDs(request);
-    console.log(res);
-    // TODO: add backend call here
-    // TODO: add send mint transaction here
+      const { metadataUrl, imageUrl } = await getIpfsCIDs(request);
+      const metadataCID = metadataUrl.split("/").pop();
 
-    // await createNft({
-    //   name: "test",
-    //   royalties: "0",
-    //   attributes:
-    //     "tags:xArtists,AIMegaWaveHackathon;metadata:bafkreibngetnjgfzrq2ovxw7ek745rk6vz34y23yxjau3qgpxcwltvdq7a",
-    //   asset_uri:
-    //     "https://ipfs.io/ipfs/QmPano8fKhpKaykrCGAZ2LYEYmFV5c1dpdeThXdN54a8HZ",
-    //   metadata_uri:
-    //     "https://ipfs.io/ipfs/bafkreibngetnjgfzrq2ovxw7ek745rk6vz34y23yxjau3qgpxcwltvdq7a",
-    //   selling_price: "1234000000000000000",
-    //   opt_token_used_as_payment: TRO_TOKEN_ID,
-    // });
+      await createNft({
+        name: request.title,
+        royalties: "0",
+        attributes: `tags:xArtists,AIMegaWaveHackathon${
+          request.hasPhysicalAsset ? ",TokenizedPhysicalArtwork" : ""
+        };metadata:${metadataCID}`,
+        asset_uri: imageUrl,
+        metadata_uri: metadataUrl,
+        selling_price: "1000000000000000000",
+        opt_token_used_as_payment: TRO_TOKEN_ID,
+      });
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: "Failed to create artwork",
+        variant: "destructive",
+      });
+    }
   };
 
   // Add early return if not logged in

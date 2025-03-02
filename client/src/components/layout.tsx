@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Palette, Image, UserCircle, LightbulbIcon, Coins, Menu, CircleDollarSign } from "lucide-react";
+import { Palette, Image, UserCircle, LightbulbIcon, Coins, Menu, CircleDollarSign, Brush, Handshake } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -36,13 +36,13 @@ function NavItem({ href, children, icon, isActive, onClick }: NavItemProps) {
 }
 
 const NAV_ITEMS = [
-  { href: "/", icon: <Image className="h-4 w-4" />, label: "Home" },
   { href: "/gallery", icon: <Palette className="h-4 w-4" />, label: "Gallery" },
+  { href: "/physical-art", icon: <Brush className="h-4 w-4" />, label: "Physical Art" },
+  { href: "/escrow", icon: <Handshake className="h-4 w-4" />, label: "Escrow" },
   { href: "/create", icon: <Image className="h-4 w-4" />, label: "Create NFT" },
   { href: "/stake", icon: <Coins className="h-4 w-4" />, label: "Stake" },
   { href: "/governance", icon: <LightbulbIcon className="h-4 w-4" />, label: "Governance" },
   { href: "/faucet", icon: <CircleDollarSign className="h-4 w-4" />, label: "Faucet" },
-  // { href: "/profile", icon: <UserCircle className="h-4 w-4" />, label: "Profile" },
 ];
 
 export default function Layout({ children }: { children: React.ReactNode }) {
@@ -96,10 +96,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       <div className="grid lg:grid-cols-[240px_1fr] h-full">
         {/* Desktop Sidebar */}
         <aside className="hidden lg:flex flex-col border-r bg-card p-6">
-          <div className="flex items-center gap-2 mb-8">
-            <Palette className="h-6 w-6 text-primary" />
-            <h1 className="font-bold text-xl">NFT Gallery</h1>
-          </div>
+          <Link href="/">
+            <div className="flex items-center gap-2 mb-8 cursor-pointer hover:opacity-80">
+              <Palette className="h-6 w-6 text-primary" />
+              <h1 className="font-bold text-xl">xArtists</h1>
+            </div>
+          </Link>
           <div className="flex-1">
             {renderNavItems()}
           </div>
@@ -108,10 +110,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         {/* Mobile Navigation */}
         <div className="sticky top-0 z-50 border-b bg-background lg:hidden">
           <div className="flex items-center justify-between p-4">
-            <div className="flex items-center gap-2">
-              <Palette className="h-6 w-6 text-primary" />
-              <h1 className="font-bold text-xl">NFT Gallery</h1>
-            </div>
+            <Link href="/">
+              <div className="flex items-center gap-2 cursor-pointer hover:opacity-80">
+                <Palette className="h-6 w-6 text-primary" />
+                <h1 className="font-bold text-xl">xArtists</h1>
+              </div>
+            </Link>
             <Sheet>
               <SheetTrigger asChild>
                 <Button variant="outline" size="icon">
@@ -123,7 +127,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                   <SheetTitle>
                     <div className="flex items-center gap-2">
                       <Palette className="h-6 w-6 text-primary" />
-                      <span>NFT Gallery</span>
+                      <span>xArtists</span>
                     </div>
                   </SheetTitle>
                 </SheetHeader>

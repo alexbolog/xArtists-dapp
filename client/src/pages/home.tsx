@@ -52,9 +52,10 @@ export default function Home() {
   });
 
   // Transform ApiNft[] to Artwork[] with prices
-  const artworks = apiNfts?.map((nft) => 
+  const artworks = apiNfts?.map((nft) =>
     mapNftToArtwork(nft, priceMap?.[nft.nonce.toString()])
   );
+
 
   return (
     <div>
