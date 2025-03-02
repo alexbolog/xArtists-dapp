@@ -28,11 +28,6 @@
             {
                 "name": "tro_token_identifier",
                 "type": "TokenIdentifier"
-            },
-            {
-                "name": "lp_token_identifiers",
-                "type": "variadic<TokenIdentifier>",
-                "multi_arg": true
             }
         ],
         "outputs": []
@@ -112,6 +107,18 @@
                     "name": "lp_token_identifiers",
                     "type": "variadic<TokenIdentifier>",
                     "multi_arg": true
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "name": "setTroTokenIdentifier",
+            "onlyOwner": true,
+            "mutability": "mutable",
+            "inputs": [
+                {
+                    "name": "tro_token_identifier",
+                    "type": "TokenIdentifier"
                 }
             ],
             "outputs": []
@@ -399,6 +406,22 @@
                     "type": "ProposalVoteCount"
                 }
             ]
+        },
+        {
+            "name": "getAllProposals",
+            "mutability": "readonly",
+            "inputs": [
+                {
+                    "name": "user",
+                    "type": "optional<Address>",
+                    "multi_arg": true
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "List<FullProposalContext>"
+                }
+            ]
         }
     ],
     "events": [
@@ -541,6 +564,31 @@
                 {
                     "name": "amount",
                     "type": "BigUint"
+                }
+            ]
+        },
+        "FullProposalContext": {
+            "type": "struct",
+            "fields": [
+                {
+                    "name": "proposal",
+                    "type": "Proposal"
+                },
+                {
+                    "name": "users_voting_power",
+                    "type": "BigUint"
+                },
+                {
+                    "name": "users_vote",
+                    "type": "Option<VoteContext>"
+                },
+                {
+                    "name": "proposal_status",
+                    "type": "u8"
+                },
+                {
+                    "name": "proposal_vote_count",
+                    "type": "ProposalVoteCount"
                 }
             ]
         },
@@ -720,7 +768,7 @@
             "fields": [
                 {
                     "name": "decision",
-                    "type": "VoteDecision"
+                    "type": "u8"
                 },
                 {
                     "name": "voting_power",

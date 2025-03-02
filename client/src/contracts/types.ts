@@ -94,3 +94,62 @@ export type ProposalCreatedEvent = {
   start_time: number;
   end_time: number;
 };
+
+export type FullProposalContext = {
+  proposal: Proposal;
+  users_voting_power: string; // BigUint represented as string
+  users_vote: VoteContext | null; // Option<VoteContext> represented as nullable
+  proposal_status: ProposalStatus;
+  proposal_vote_count: ProposalVoteCount;
+};
+
+
+// Demo nft minter types
+export interface NftContent {
+  name: string;
+  royalties: string; // BigUint represented as string
+  attributes: string; // bytes represented as string
+  asset_uri: string; // bytes represented as string
+  metadata_uri: string; // bytes represented as string
+}
+
+export interface PriceTag {
+  token: string; // EgldOrEsdtTokenIdentifier represented as string
+  nonce: number; // u64
+  amount: string; // BigUint represented as string
+}
+
+export interface NftForSale {
+  nft_nonce: number; // u64
+  price_tag: PriceTag;
+  nft_content: NftContent;
+}
+
+// Additional interfaces for endpoint inputs/outputs
+export interface CreateNftArgs {
+  name: string;
+  royalties: string;
+  attributes: string;
+  asset_uri: string;
+  metadata_uri: string;
+  selling_price: string;
+  opt_token_used_as_payment?: string;
+  opt_token_used_as_payment_nonce?: number;
+}
+
+export interface ClaimRoyaltiesArgs {
+  marketplace_address: string; // Address represented as string
+  token_id: string;
+  token_nonce: number;
+}
+
+export interface IssueTokenArgs {
+  token_name: string;
+  token_ticker: string;
+}
+
+export interface OptionalPriceTag {
+  token: string;
+  nonce: number;
+  amount: string;
+}

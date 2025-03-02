@@ -7,24 +7,28 @@ export const physicalArtworkTypes = {
   painting: {
     name: "Painting",
     metadata: z.object({
-      width: z.number().min(0).describe("Width in centimeters"),
-      height: z.number().min(0).describe("Height in centimeters"),
-      depth: z.number().min(0).describe("Depth in centimeters"),
-      weight: z.number().min(0).describe("Weight in kilograms"),
+      width: z.coerce.number().min(0).describe("Width in centimeters"),
+      height: z.coerce.number().min(0).describe("Height in centimeters"),
+      depth: z.coerce.number().min(0).describe("Depth in centimeters"),
+      weight: z.coerce.number().min(0).describe("Weight in kilograms"),
       medium: z.string().describe("Painting medium (e.g., oil, acrylic)"),
-      surface: z.string().describe("Surface material (e.g., canvas, wood panel)"),
+      surface: z
+        .string()
+        .describe("Surface material (e.g., canvas, wood panel)"),
     }),
   },
   sculpture: {
     name: "Sculpture",
     metadata: z.object({
-      width: z.number().min(0).describe("Width in centimeters"),
-      height: z.number().min(0).describe("Height in centimeters"),
-      depth: z.number().min(0).describe("Depth in centimeters"),
-      weight: z.number().min(0).describe("Weight in kilograms"),
+      width: z.coerce.number().min(0).describe("Width in centimeters"),
+      height: z.coerce.number().min(0).describe("Height in centimeters"),
+      depth: z.coerce.number().min(0).describe("Depth in centimeters"),
+      weight: z.coerce.number().min(0).describe("Weight in kilograms"),
       material: z.string().describe("Primary material (e.g., bronze, marble)"),
       technique: z.string().describe("Creation technique"),
-      baseIncluded: z.boolean().describe("Whether the sculpture includes a base"),
+      baseIncluded: z
+        .string()
+        .describe("Whether the sculpture includes a base (e.g. true, false)"),
     }),
   },
 } as const;

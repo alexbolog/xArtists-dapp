@@ -2,8 +2,13 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
+import ApiNftArtworkCard from "@/components/api-nft-artwork-card";
+import { getCollectionNfts } from "@/api/mvx";
+import { getDemoCollectionTokenId } from "@/contracts/config";
+import type { ApiNft } from "@/api/mvx";
 import ArtworkCard from "@/components/artwork-card";
-import type { Artwork } from "@shared/schema";
+import { mapNftToArtwork } from "@/utils";
+import useDemoNftMinter from "@/contracts/hooks/useDemoNftMinter";
 
 function Hero() {
   return (
@@ -34,9 +39,22 @@ function Hero() {
 }
 
 export default function Home() {
-  const { data: artworks, isLoading } = useQuery<Artwork[]>({
-    queryKey: ["/api/artworks"],
+  const { getNftsForSaleMap } = useDemoNftMinter();
+
+  const { data: apiNfts, isLoading } = useQuery<ApiNft[]>({
+    queryKey: ["collection-nfts"],
+    queryFn: () => getCollectionNfts(getDemoCollectionTokenId()),
   });
+
+  const { data: priceMap } = useQuery<Record<string, string>>({
+    queryKey: ["nfts-price-map"],
+    queryFn: () => getNftsForSaleMap(),
+  });
+
+  // Transform ApiNft[] to Artwork[] with prices
+  const artworks = apiNfts?.map((nft) => 
+    mapNftToArtwork(nft, priceMap?.[nft.nonce.toString()])
+  );
 
   return (
     <div>

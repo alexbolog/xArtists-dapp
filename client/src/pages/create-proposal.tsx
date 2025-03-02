@@ -29,6 +29,8 @@ import {
 import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
+import { ADMIN_ADDRESS } from "@/contracts/config";
+import { useGetAccountInfo } from "@multiversx/sdk-dapp/hooks";
 
 // Mock list of available tokens - in production this would come from an API
 const AVAILABLE_TOKENS = [
@@ -41,10 +43,12 @@ const AVAILABLE_TOKENS = [
 const TOTAL_VOTING_POWER = 10000;
 
 export default function CreateProposal() {
+  const { address } = useGetAccountInfo();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [selectedTokens, setSelectedTokens] = useState<string[]>([]);
-  const [minVotingPowerPercent, setMinVotingPowerPercent] = useState<number>(10);
+  const [minVotingPowerPercent, setMinVotingPowerPercent] =
+    useState<number>(10);
 
   const form = useForm({
     resolver: zodResolver(insertProposalSchema),
@@ -84,9 +88,9 @@ export default function CreateProposal() {
   });
 
   const toggleToken = (tokenId: string) => {
-    setSelectedTokens(current =>
+    setSelectedTokens((current) =>
       current.includes(tokenId)
-        ? current.filter(id => id !== tokenId)
+        ? current.filter((id) => id !== tokenId)
         : [...current, tokenId]
     );
   };
@@ -94,7 +98,10 @@ export default function CreateProposal() {
   const handleSliderChange = (value: number[]) => {
     const percent = value[0];
     setMinVotingPowerPercent(percent);
-    form.setValue("minVotingPower", Math.floor(TOTAL_VOTING_POWER * (percent / 100)).toString());
+    form.setValue(
+      "minVotingPower",
+      Math.floor(TOTAL_VOTING_POWER * (percent / 100)).toString()
+    );
   };
 
   return (
@@ -186,7 +193,10 @@ export default function CreateProposal() {
                           onChange={(e) => {
                             const [hours, minutes] = e.target.value.split(":");
                             const newDate = new Date(field.value);
-                            newDate.setHours(parseInt(hours), parseInt(minutes));
+                            newDate.setHours(
+                              parseInt(hours),
+                              parseInt(minutes)
+                            );
                             field.onChange(newDate);
                           }}
                         />
@@ -229,7 +239,8 @@ export default function CreateProposal() {
                             selected={field.value}
                             onSelect={field.onChange}
                             disabled={(date) =>
-                              date < field.value || date < new Date("1900-01-01")
+                              date < field.value ||
+                              date < new Date("1900-01-01")
                             }
                             initialFocus
                           />
@@ -243,7 +254,10 @@ export default function CreateProposal() {
                           onChange={(e) => {
                             const [hours, minutes] = e.target.value.split(":");
                             const newDate = new Date(field.value);
-                            newDate.setHours(parseInt(hours), parseInt(minutes));
+                            newDate.setHours(
+                              parseInt(hours),
+                              parseInt(minutes)
+                            );
                             field.onChange(newDate);
                           }}
                         />
@@ -271,8 +285,15 @@ export default function CreateProposal() {
                         step={1}
                       />
                       <div className="flex justify-between text-sm text-muted-foreground">
-                        <span>{minVotingPowerPercent}% of total voting power</span>
-                        <span>{Math.floor(TOTAL_VOTING_POWER * (minVotingPowerPercent / 100))} tokens</span>
+                        <span>
+                          {minVotingPowerPercent}% of total voting power
+                        </span>
+                        <span>
+                          {Math.floor(
+                            TOTAL_VOTING_POWER * (minVotingPowerPercent / 100)
+                          )}{" "}
+                          tokens
+                        </span>
                       </div>
                     </div>
                   </FormControl>
@@ -290,7 +311,10 @@ export default function CreateProposal() {
                   <FormControl>
                     <div className="space-y-2">
                       {AVAILABLE_TOKENS.map((token) => (
-                        <div key={token.id} className="flex items-center space-x-2">
+                        <div
+                          key={token.id}
+                          className="flex items-center space-x-2"
+                        >
                           <Checkbox
                             checked={selectedTokens.includes(token.id)}
                             onCheckedChange={() => toggleToken(token.id)}
@@ -307,20 +331,26 @@ export default function CreateProposal() {
               )}
             />
 
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={createProposal.isPending}
-            >
-              {createProposal.isPending ? (
-                <div className="flex items-center gap-2">
-                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                  Creating...
-                </div>
-              ) : (
-                "Create Proposal"
-              )}
-            </Button>
+            {ADMIN_ADDRESS === address ? (
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={createProposal.isPending}
+              >
+                {createProposal.isPending ? (
+                  <div className="flex items-center gap-2">
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                    Creating...
+                  </div>
+                ) : (
+                  "Create Proposal"
+                )}
+              </Button>
+            ) : (
+              <Button variant="outline" className="w-full gap-2">
+                <span>You are not an admin</span>
+              </Button>
+            )}
           </form>
         </Form>
       </Card>

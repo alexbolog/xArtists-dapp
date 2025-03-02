@@ -4,18 +4,32 @@ import { Button } from "@/components/ui/button";
 import { Heart, ShoppingCart, Send } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import type { Artwork } from "@shared/schema";
+import BigNumber from "bignumber.js";
+import useDemoNftMinter from "@/contracts/hooks/useDemoNftMinter";
+import { TRO_TOKEN_ID } from "@/contracts/config";
 
 interface ArtworkCardProps {
   artwork: Artwork;
   showActions?: boolean;
 }
 
-export default function ArtworkCard({ 
-  artwork, 
+export default function ArtworkCard({
+  artwork,
   showActions = true,
 }: ArtworkCardProps) {
+  const { buyNft } = useDemoNftMinter();
   const forSale = Boolean(artwork.price);
-  const priceDisplay = forSale ? `${artwork.price} TRO` : "0.3 TRO"; // Demo last sold price
+  const priceDisplay = forSale
+    ? `${new BigNumber(artwork.price || "0").shiftedBy(-18).toString()} TRO`
+    : ""; // Demo last sold price
+
+  const handleBuyNft = async (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+    const nonce = artwork.id;
+    const price = artwork.price || "0";
+
+    await buyNft(nonce, TRO_TOKEN_ID, price);
+  };
 
   return (
     <Card className="group relative overflow-hidden transition-all hover:shadow-lg">
@@ -41,11 +55,17 @@ export default function ArtworkCard({
           <div className="p-4">
             <div className="flex items-start justify-between gap-2">
               <div>
-                <h3 className="font-semibold text-lg mb-1 line-clamp-1">{artwork.title}</h3>
-                <p className="text-sm text-muted-foreground">by {artwork.artist}</p>
+                <h3 className="font-semibold text-lg mb-1 line-clamp-1">
+                  {artwork.title}
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  by {artwork.artist}
+                </p>
               </div>
               <div className="text-right">
-                <p className="text-sm text-muted-foreground">{forSale ? "Price" : "Last Sold"}</p>
+                <p className="text-sm text-muted-foreground">
+                  {forSale ? "Price" : ""}
+                </p>
                 <p className="font-semibold">{priceDisplay}</p>
               </div>
             </div>
@@ -61,27 +81,28 @@ export default function ArtworkCard({
 
       {showActions && (
         <CardFooter className="gap-2 p-4 pt-0">
-          <Button 
+          <Button
             variant="default"
-            size="sm" 
+            size="sm"
             className="flex-1 bg-gradient-to-r from-primary to-primary-600 hover:opacity-90 transition-opacity"
           >
             <Heart className="h-4 w-4 mr-1" />
-            Like {artwork.voteCount ? `(${artwork.voteCount})` : ''}
+            Like {artwork.voteCount ? `(${artwork.voteCount})` : ""}
           </Button>
           {forSale ? (
-            <Button 
-              variant="outline" 
-              size="sm" 
+            <Button
+              variant="outline"
+              size="sm"
               className="flex-1 border-primary/20 hover:border-primary transition-colors"
+              onClick={handleBuyNft}
             >
               <ShoppingCart className="h-4 w-4 mr-1" />
               Buy
             </Button>
           ) : (
-            <Button 
-              variant="outline" 
-              size="sm" 
+            <Button
+              variant="outline"
+              size="sm"
               className="flex-1 border-primary/20 hover:border-primary transition-colors"
             >
               <Send className="h-4 w-4 mr-1" />
